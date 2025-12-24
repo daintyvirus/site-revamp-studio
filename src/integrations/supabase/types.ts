@@ -207,6 +207,51 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_methods: {
+        Row: {
+          account_name: string | null
+          account_number: string
+          created_at: string
+          id: string
+          instructions: string | null
+          is_active: boolean
+          logo_url: string | null
+          name: string
+          slug: string
+          sort_order: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          account_name?: string | null
+          account_number: string
+          created_at?: string
+          id?: string
+          instructions?: string | null
+          is_active?: boolean
+          logo_url?: string | null
+          name: string
+          slug: string
+          sort_order?: number
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          account_name?: string | null
+          account_number?: string
+          created_at?: string
+          id?: string
+          instructions?: string | null
+          is_active?: boolean
+          logo_url?: string | null
+          name?: string
+          slug?: string
+          sort_order?: number
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_variants: {
         Row: {
           created_at: string

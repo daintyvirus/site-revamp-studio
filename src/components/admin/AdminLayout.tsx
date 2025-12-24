@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, Tags, ShoppingBag, Users, Settings, ArrowLeft, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Package, Tags, ShoppingBag, CreditCard, ArrowLeft, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +13,7 @@ const navItems = [
   { title: 'Products', path: '/admin/products', icon: Package },
   { title: 'Categories', path: '/admin/categories', icon: Tags },
   { title: 'Orders', path: '/admin/orders', icon: ShoppingBag },
+  { title: 'Payment Methods', path: '/admin/payment-methods', icon: CreditCard },
 ];
 
 export default function AdminLayout({ children }: AdminLayoutProps) {

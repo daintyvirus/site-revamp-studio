@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useCart, useClearCart } from './useCart';
 import { toast } from '@/hooks/use-toast';
-import type { PaymentMethod } from '@/components/checkout/PaymentMethodSelector';
 
 interface CustomerInfo {
   name: string;
@@ -13,7 +12,7 @@ interface CustomerInfo {
 
 interface CheckoutData {
   customerInfo: CustomerInfo;
-  paymentMethod: PaymentMethod;
+  paymentMethod: string;
   transactionId: string;
   notes?: string;
 }
