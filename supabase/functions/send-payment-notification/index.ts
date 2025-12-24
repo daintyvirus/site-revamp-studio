@@ -35,8 +35,8 @@ serve(async (req: Request): Promise<Response> => {
 
     const hostingerEmail = Deno.env.get("HOSTINGER_EMAIL");
     const hostingerPassword = Deno.env.get("HOSTINGER_EMAIL_PASSWORD");
-    // Use alias for sending, authenticate with main email
-    const senderEmail = "paymentverify@goldenbumps.com";
+    // Use support alias for all order-related emails
+    const senderEmail = "support@goldenbumps.com";
 
     if (!hostingerEmail || !hostingerPassword) {
       console.error("Hostinger email credentials not configured");
