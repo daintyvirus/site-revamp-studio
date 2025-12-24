@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, Search, Upload, Download } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Upload, Download, Calculator } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +31,7 @@ import {
 import ProductForm from '@/components/admin/ProductForm';
 import ProductImportDialog from '@/components/admin/ProductImportDialog';
 import ProductExportDialog from '@/components/admin/ProductExportDialog';
+import BulkPriceEditor from '@/components/admin/BulkPriceEditor';
 import { useAdminProducts, useDeleteProduct } from '@/hooks/useProducts';
 import type { Product } from '@/types/database';
 import { toast } from 'sonner';
@@ -40,6 +41,7 @@ export default function AdminProducts() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isBulkEditOpen, setIsBulkEditOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
 
@@ -87,6 +89,10 @@ export default function AdminProducts() {
             <Button variant="outline" onClick={() => setIsExportOpen(true)}>
               <Download className="h-4 w-4 mr-2" />
               Export
+            </Button>
+            <Button variant="outline" onClick={() => setIsBulkEditOpen(true)}>
+              <Calculator className="h-4 w-4 mr-2" />
+              Bulk Edit
             </Button>
             <Button onClick={() => setIsFormOpen(true)} className="glow-purple">
               <Plus className="h-4 w-4 mr-2" />
@@ -226,6 +232,13 @@ export default function AdminProducts() {
       <ProductExportDialog 
         open={isExportOpen} 
         onOpenChange={setIsExportOpen}
+      />
+
+      {/* Bulk Price Editor */}
+      <BulkPriceEditor
+        open={isBulkEditOpen}
+        onOpenChange={setIsBulkEditOpen}
+        onComplete={() => refetch()}
       />
     </AdminLayout>
   );
