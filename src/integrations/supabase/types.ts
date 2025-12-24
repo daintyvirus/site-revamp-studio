@@ -107,6 +107,63 @@ export type Database = {
         }
         Relationships: []
       }
+      email_templates: {
+        Row: {
+          body_content: string | null
+          body_intro: string
+          created_at: string
+          footer_text: string | null
+          header_color: string
+          header_title: string
+          id: string
+          is_active: boolean
+          sender_email: string
+          sender_name: string
+          show_order_details: boolean
+          show_tracking_button: boolean
+          status_type: string
+          subject_template: string
+          tracking_button_text: string | null
+          updated_at: string
+        }
+        Insert: {
+          body_content?: string | null
+          body_intro: string
+          created_at?: string
+          footer_text?: string | null
+          header_color?: string
+          header_title: string
+          id?: string
+          is_active?: boolean
+          sender_email?: string
+          sender_name?: string
+          show_order_details?: boolean
+          show_tracking_button?: boolean
+          status_type: string
+          subject_template: string
+          tracking_button_text?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body_content?: string | null
+          body_intro?: string
+          created_at?: string
+          footer_text?: string | null
+          header_color?: string
+          header_title?: string
+          id?: string
+          is_active?: boolean
+          sender_email?: string
+          sender_name?: string
+          show_order_details?: boolean
+          show_tracking_button?: boolean
+          status_type?: string
+          subject_template?: string
+          tracking_button_text?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
