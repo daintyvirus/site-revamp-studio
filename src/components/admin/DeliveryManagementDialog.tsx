@@ -40,10 +40,10 @@ const platforms = [
   { value: 'other', label: 'Other' },
 ];
 
-const deliveryTypes = [
-  { value: 'code', label: 'Redeem Code' },
-  { value: 'account', label: 'Account Credentials' },
-  { value: 'other', label: 'Other Digital Item' },
+const deliveryTypePresets = [
+  { value: 'Code', label: 'Redeem Code' },
+  { value: 'Account', label: 'Account Credentials' },
+  { value: 'custom', label: 'Custom...' },
 ];
 
 interface DeliveryManagementDialogProps {
@@ -54,12 +54,14 @@ interface DeliveryManagementDialogProps {
 
 export function DeliveryManagementDialog({ order, open, onOpenChange }: DeliveryManagementDialogProps) {
   const [deliveryInfo, setDeliveryInfo] = useState(order?.delivery_info || '');
-  const [deliveryType, setDeliveryType] = useState(order?.delivery_type || 'code');
+  const [deliveryType, setDeliveryType] = useState(order?.delivery_type || 'Code');
+  const [customDeliveryType, setCustomDeliveryType] = useState('');
   const [deliveryPlatform, setDeliveryPlatform] = useState(order?.delivery_platform || '');
   const [deliveryInstructions, setDeliveryInstructions] = useState(order?.delivery_instructions || '');
   const [showInfo, setShowInfo] = useState(false);
   const [sending, setSending] = useState(false);
   const [activeTab, setActiveTab] = useState('delivery');
+  const [isCustomType, setIsCustomType] = useState(false);
   
   const updateDelivery = useUpdateOrderDelivery();
 
@@ -67,11 +69,24 @@ export function DeliveryManagementDialog({ order, open, onOpenChange }: Delivery
   useState(() => {
     if (order) {
       setDeliveryInfo(order.delivery_info || '');
-      setDeliveryType(order.delivery_type || 'code');
+      const existingType = order.delivery_type || 'Code';
+      const isPreset = deliveryTypePresets.some(p => p.value === existingType && p.value !== 'custom');
+      if (isPreset) {
+        setDeliveryType(existingType);
+        setIsCustomType(false);
+      } else {
+        setDeliveryType('custom');
+        setCustomDeliveryType(existingType);
+        setIsCustomType(true);
+      }
       setDeliveryPlatform(order.delivery_platform || '');
       setDeliveryInstructions(order.delivery_instructions || '');
     }
   });
+
+  const getFinalDeliveryType = () => {
+    return isCustomType ? customDeliveryType.trim() || 'Item' : deliveryType;
+  };
 
   const handleSaveAndDeliver = async () => {
     if (!order || !deliveryInfo.trim()) {
@@ -82,11 +97,13 @@ export function DeliveryManagementDialog({ order, open, onOpenChange }: Delivery
     try {
       setSending(true);
       
+      const finalType = getFinalDeliveryType();
+      
       // Update order with delivery info
       await updateDelivery.mutateAsync({
         orderId: order.id,
         deliveryInfo: deliveryInfo.trim(),
-        deliveryType,
+        deliveryType: finalType,
         deliveryPlatform,
         deliveryInstructions: deliveryInstructions.trim() || undefined,
       });
@@ -100,7 +117,7 @@ export function DeliveryManagementDialog({ order, open, onOpenChange }: Delivery
             orderId: order.id,
             orderTotal: order.total,
             deliveryInfo: deliveryInfo.trim(),
-            deliveryType,
+            deliveryType: finalType,
             deliveryPlatform,
           },
         });
@@ -221,26 +238,48 @@ export function DeliveryManagementDialog({ order, open, onOpenChange }: Delivery
 
             {/* Delivery Type */}
             <div className="space-y-2">
-              <Label>Delivery Type</Label>
-              <Select value={deliveryType} onValueChange={setDeliveryType}>
+              <Label>Delivery Type (appears in email as "Reveal Your ___")</Label>
+              <Select 
+                value={isCustomType ? 'custom' : deliveryType} 
+                onValueChange={(val) => {
+                  if (val === 'custom') {
+                    setIsCustomType(true);
+                    setDeliveryType('custom');
+                  } else {
+                    setIsCustomType(false);
+                    setDeliveryType(val);
+                  }
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {deliveryTypes.map((t) => (
+                  {deliveryTypePresets.map((t) => (
                     <SelectItem key={t.value} value={t.value}>
                       {t.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {isCustomType && (
+                <Input
+                  value={customDeliveryType}
+                  onChange={(e) => setCustomDeliveryType(e.target.value)}
+                  placeholder="Enter custom type name (e.g., Gift Card, License Key)"
+                  className="mt-2"
+                />
+              )}
+              <p className="text-xs text-muted-foreground">
+                Email button will show: "Reveal Your {isCustomType ? (customDeliveryType || 'Item') : deliveryType}"
+              </p>
             </div>
 
             {/* Delivery Info */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>
-                  {deliveryType === 'account' ? 'Account Details' : 'Redeem Code / Info'}
+                  {deliveryType === 'Account' ? 'Account Details' : 'Redeem Code / Info'}
                 </Label>
                 <div className="flex gap-1">
                   <Button
