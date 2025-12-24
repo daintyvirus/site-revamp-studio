@@ -148,19 +148,20 @@ export function useCheckout() {
         // Don't fail the order if email fails
       }
 
+      // Create items list for confirmation and admin notification
+      const orderItemsList = cart.map(item => {
+        const priceBDT = item.variant?.sale_price_bdt || item.variant?.price_bdt || item.product?.sale_price_bdt || item.product?.price_bdt || 0;
+        const priceUSD = item.variant?.sale_price || item.variant?.price || item.product?.sale_price || item.product?.price || 0;
+        return {
+          name: item.product?.name || 'Product',
+          quantity: item.quantity,
+          price: formatPriceValue(priceBDT, priceUSD),
+          variant: item.variant?.name
+        };
+      });
+
       // Send admin notification email
       try {
-        const adminItems = cart.map(item => {
-          const priceBDT = item.variant?.sale_price_bdt || item.variant?.price_bdt || item.product?.sale_price_bdt || item.product?.price_bdt || 0;
-          const priceUSD = item.variant?.sale_price || item.variant?.price || item.product?.sale_price || item.product?.price || 0;
-          return {
-            name: item.product?.name || 'Product',
-            quantity: item.quantity,
-            price: formatPriceValue(priceBDT, priceUSD),
-            variant: item.variant?.name
-          };
-        });
-
         await supabase.functions.invoke('send-admin-order-notification', {
           body: {
             orderId: order.id,
@@ -171,7 +172,7 @@ export function useCheckout() {
             currency: currency,
             paymentMethod,
             transactionId,
-            items: adminItems
+            items: orderItemsList
           }
         });
         console.log('Admin order notification sent');
@@ -180,14 +181,23 @@ export function useCheckout() {
         // Don't fail the order if admin email fails
       }
 
-      return { order, cart };
+      return { 
+        order, 
+        cart,
+        orderDetails: {
+          orderId: order.id,
+          total,
+          currency,
+          paymentMethod,
+          transactionId,
+          customerName: customerInfo.name,
+          customerEmail: customerInfo.email,
+          items: orderItemsList
+        }
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-      toast({
-        title: 'Order placed!',
-        description: 'Your payment is being verified. You will receive confirmation soon.'
-      });
     },
     onError: (error: Error) => {
       toast({

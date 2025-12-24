@@ -142,7 +142,7 @@ export interface OrderItem {
   price: number;
   created_at: string;
   product?: Product;
-  variant?: ProductVariant;
+  variant?: ProductVariant | null;
 }
 
 export interface DeliveryLog {
