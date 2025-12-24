@@ -119,23 +119,31 @@ export default function ProductDetail() {
   const saleEndDate = product?.sale_end_date ? new Date(product.sale_end_date) : null;
   
   const isFlashSaleActive = product?.flash_sale_enabled && 
-    product?.sale_price && 
-    product.sale_price < product.price &&
+    product?.sale_price_bdt && 
+    product.sale_price_bdt < product.price_bdt &&
     (!saleStartDate || saleStartDate <= now) &&
     (!saleEndDate || saleEndDate > now);
 
-  // Use variant price if selected, otherwise product price
-  const basePrice = selectedVariant 
+  // Use variant price if selected, otherwise product price (BDT is base)
+  const basePriceBDT = selectedVariant 
+    ? (selectedVariant.sale_price_bdt || selectedVariant.price_bdt)
+    : (product?.sale_price_bdt || product?.price_bdt || 0);
+  
+  const basePriceUSD = selectedVariant 
     ? (selectedVariant.sale_price || selectedVariant.price)
     : (product?.sale_price || product?.price || 0);
   
-  const originalPrice = selectedVariant 
+  const originalPriceBDT = selectedVariant 
+    ? selectedVariant.price_bdt 
+    : (product?.price_bdt || 0);
+
+  const originalPriceUSD = selectedVariant 
     ? selectedVariant.price 
     : (product?.price || 0);
 
-  const hasDiscount = basePrice < originalPrice;
-  const discountPercent = hasDiscount
-    ? Math.round(((originalPrice - basePrice) / originalPrice) * 100)
+  const hasDiscount = basePriceBDT < originalPriceBDT;
+  const discountPercent = hasDiscount && originalPriceBDT > 0
+    ? Math.round(((originalPriceBDT - basePriceBDT) / originalPriceBDT) * 100)
     : 0;
 
   const currentStock = selectedVariant?.stock ?? product?.stock ?? 0;
@@ -307,11 +315,11 @@ export default function ProductDetail() {
                 "font-display text-4xl font-bold",
                 isFlashSaleActive ? "text-destructive" : "text-foreground"
               )}>
-                {formatPrice(basePrice)}
+                {formatPrice(basePriceBDT, basePriceUSD)}
               </span>
               {hasDiscount && (
                 <span className="text-xl text-muted-foreground line-through">
-                  {formatPrice(originalPrice)}
+                  {formatPrice(originalPriceBDT, originalPriceUSD)}
                 </span>
               )}
               {hasDiscount && (
@@ -352,7 +360,7 @@ export default function ProductDetail() {
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Total:</span>
                 <span className="font-display text-2xl font-bold text-primary">
-                  {formatPrice(basePrice * quantity)}
+                  {formatPrice(basePriceBDT * quantity, basePriceUSD * quantity)}
                 </span>
               </div>
             </div>

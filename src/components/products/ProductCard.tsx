@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAddToCart } from '@/hooks/useCart';
 import { useToggleWishlist, useIsInWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/hooks/useAuth';
+import { useCurrency } from '@/hooks/useCurrency';
 import type { Product } from '@/types/database';
 import { cn } from '@/lib/utils';
 
@@ -61,6 +62,7 @@ function CountdownDisplay({ endDate }: CountdownDisplayProps) {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const { user } = useAuth();
+  const { formatPrice } = useCurrency();
   const addToCart = useAddToCart();
   const toggleWishlist = useToggleWishlist();
   const isInWishlist = useIsInWishlist(product.id);
@@ -70,15 +72,17 @@ export default function ProductCard({ product }: ProductCardProps) {
   const saleEndDate = product.sale_end_date ? new Date(product.sale_end_date) : null;
   
   const isFlashSaleActive = product.flash_sale_enabled && 
-    product.sale_price && 
-    product.sale_price < product.price &&
+    product.sale_price_bdt && 
+    product.sale_price_bdt < product.price_bdt &&
     (!saleStartDate || saleStartDate <= now) &&
     (!saleEndDate || saleEndDate > now);
 
-  const hasDiscount = product.sale_price && product.sale_price < product.price;
-  const displayPrice = hasDiscount ? product.sale_price : product.price;
+  // Use BDT as base prices
+  const displayPriceBDT = product.sale_price_bdt || product.price_bdt;
+  const displayPriceUSD = product.sale_price || product.price;
+  const hasDiscount = product.sale_price_bdt && product.sale_price_bdt < product.price_bdt;
   const discountPercent = hasDiscount
-    ? Math.round(((product.price - product.sale_price!) / product.price) * 100)
+    ? Math.round(((product.price_bdt - product.sale_price_bdt!) / product.price_bdt) * 100)
     : 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -185,11 +189,11 @@ export default function ProductCard({ product }: ProductCardProps) {
               "font-display text-lg font-semibold",
               isFlashSaleActive ? "text-destructive" : "text-foreground"
             )}>
-              ${displayPrice?.toFixed(2)}
+              {formatPrice(displayPriceBDT, displayPriceUSD)}
             </span>
             {hasDiscount && (
               <span className="text-sm text-muted-foreground line-through">
-                ${product.price.toFixed(2)}
+                {formatPrice(product.price_bdt, product.price)}
               </span>
             )}
           </div>
