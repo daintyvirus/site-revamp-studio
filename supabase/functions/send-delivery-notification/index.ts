@@ -73,6 +73,7 @@ serve(async (req: Request): Promise<Response> => {
           .review-box { background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; border: 1px solid #F59E0B; }
           .footer { background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none; }
           .footer p { margin: 5px 0; color: #6b7280; font-size: 12px; }
+          .cta { display: inline-block; background: linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%); color: #1a1a1a; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; }
           .thank-you { background: linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 24px; font-weight: bold; }
         </style>
       </head>
@@ -91,6 +92,13 @@ serve(async (req: Request): Promise<Response> => {
               <p><strong>Order ID:</strong> #${orderId.slice(0, 8).toUpperCase()}</p>
               <p><strong>Order Total:</strong> ₱${orderTotal.toLocaleString()}</p>
               <p><strong>Status:</strong> <span class="status-badge">✓ Delivered</span></p>
+            </div>
+
+            <!-- View Order Button -->
+            <div style="text-align: center; margin: 25px 0;">
+              <a href="https://goldenbumps.com/track-order?id=${orderId.slice(0, 8)}" class="cta">
+                📋 View Order Details
+              </a>
             </div>
 
             <div class="review-box">
