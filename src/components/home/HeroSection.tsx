@@ -10,6 +10,7 @@ export default function HeroSection() {
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const sectionRef = useRef<HTMLElement>(null);
   
   useEffect(() => {
@@ -35,6 +36,21 @@ export default function HeroSection() {
   }, []);
 
   useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (sectionRef.current) {
+        const rect = sectionRef.current.getBoundingClientRect();
+        // Calculate mouse position relative to center of section (-1 to 1)
+        const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+        const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+        setMousePos({ x, y });
+      }
+    };
+    
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  useEffect(() => {
     if (!isTyping) return;
     
     if (displayedText.length < fullDescription.length) {
@@ -53,18 +69,18 @@ export default function HeroSection() {
       <div className="absolute inset-0 bg-gradient-to-br from-primary/40 via-primary/20 to-background" />
       <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
       
-      {/* Animated Glow Orbs with Parallax */}
+      {/* Animated Glow Orbs with Parallax + Mouse Follow */}
       <div 
-        className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/30 rounded-full blur-[120px] animate-pulse transition-transform duration-100"
-        style={{ transform: `translateY(${scrollY * 0.3}px)` }}
+        className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/30 rounded-full blur-[120px] animate-pulse transition-transform duration-300 ease-out"
+        style={{ transform: `translate(${mousePos.x * 30}px, ${scrollY * 0.3 + mousePos.y * 20}px)` }}
       />
       <div 
-        className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-destructive/20 rounded-full blur-[100px] animate-pulse transition-transform duration-100"
-        style={{ transform: `translateY(${scrollY * 0.15}px)`, animationDelay: '1s' }}
+        className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-destructive/20 rounded-full blur-[100px] animate-pulse transition-transform duration-500 ease-out"
+        style={{ transform: `translate(${mousePos.x * -20}px, ${scrollY * 0.15 + mousePos.y * -15}px)`, animationDelay: '1s' }}
       />
       <div 
-        className="absolute top-1/2 left-1/2 w-[600px] h-[600px] bg-primary/15 rounded-full blur-[150px] animate-pulse transition-transform duration-100"
-        style={{ transform: `translate(-50%, calc(-50% + ${scrollY * 0.2}px))`, animationDelay: '0.5s' }}
+        className="absolute top-1/2 left-1/2 w-[600px] h-[600px] bg-primary/15 rounded-full blur-[150px] animate-pulse transition-transform duration-700 ease-out"
+        style={{ transform: `translate(calc(-50% + ${mousePos.x * 15}px), calc(-50% + ${scrollY * 0.2 + mousePos.y * 10}px))`, animationDelay: '0.5s' }}
       />
       
       {/* Radial Glow Effect with Parallax */}
