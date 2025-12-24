@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.send-delivery-notification]
 verify_jwt = false
+
+[functions.send-cancellation-notification]
+verify_jwt = false
+
+[functions.send-refund-notification]
+verify_jwt = false
