@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Eye, CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ import {
 import { useAdminOrders, useUpdateOrderStatus, useUpdatePaymentStatus } from '@/hooks/useOrders';
 import type { Order } from '@/types/database';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const statusColors: Record<string, 'default' | 'secondary' | 'destructive'> = {
   pending: 'secondary',
@@ -45,6 +46,7 @@ const paymentStatusColors: Record<string, string> = {
 
 export default function AdminOrders() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [sendingNotification, setSendingNotification] = useState(false);
   const { data: orders, isLoading } = useAdminOrders();
   const updateStatus = useUpdateOrderStatus();
   const updatePaymentStatus = useUpdatePaymentStatus();
@@ -58,12 +60,50 @@ export default function AdminOrders() {
     }
   };
 
+  const sendPaymentNotification = async (order: Order, paymentStatus: string) => {
+    if (!order.customer_email) {
+      console.log('No customer email, skipping notification');
+      return;
+    }
+
+    try {
+      setSendingNotification(true);
+      const { data, error } = await supabase.functions.invoke('send-payment-notification', {
+        body: {
+          customerEmail: order.customer_email,
+          customerName: order.customer_name || 'Valued Customer',
+          orderId: order.id,
+          orderTotal: order.total,
+          paymentStatus: paymentStatus,
+        },
+      });
+
+      if (error) {
+        console.error('Error sending notification:', error);
+        toast.error('Failed to send email notification');
+      } else {
+        console.log('Notification sent:', data);
+        toast.success('Email notification sent to customer');
+      }
+    } catch (error) {
+      console.error('Error invoking notification function:', error);
+    } finally {
+      setSendingNotification(false);
+    }
+  };
+
   const handlePaymentStatusChange = async (orderId: string, paymentStatus: string) => {
     try {
       await updatePaymentStatus.mutateAsync({ orderId, paymentStatus });
       // Update selected order state if it's open
       if (selectedOrder?.id === orderId) {
-        setSelectedOrder({ ...selectedOrder, payment_status: paymentStatus });
+        const updatedOrder = { ...selectedOrder, payment_status: paymentStatus };
+        setSelectedOrder(updatedOrder);
+        
+        // Send email notification when payment is verified
+        if (paymentStatus === 'paid' || paymentStatus === 'failed') {
+          await sendPaymentNotification(updatedOrder, paymentStatus);
+        }
       }
       toast.success(`Payment marked as ${paymentStatus}`);
     } catch (error) {
@@ -237,9 +277,13 @@ export default function AdminOrders() {
                     variant={selectedOrder.payment_status === 'paid' ? 'default' : 'outline'}
                     className={selectedOrder.payment_status === 'paid' ? 'bg-green-600 hover:bg-green-700' : ''}
                     onClick={() => handlePaymentStatusChange(selectedOrder.id, 'paid')}
-                    disabled={updatePaymentStatus.isPending}
+                    disabled={updatePaymentStatus.isPending || sendingNotification}
                   >
-                    <CheckCircle className="h-4 w-4 mr-1" />
+                    {sendingNotification ? (
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    ) : (
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                    )}
                     Verified / Paid
                   </Button>
                   <Button
@@ -247,7 +291,7 @@ export default function AdminOrders() {
                     variant={selectedOrder.payment_status === 'pending' ? 'default' : 'outline'}
                     className={selectedOrder.payment_status === 'pending' ? 'bg-yellow-600 hover:bg-yellow-700' : ''}
                     onClick={() => handlePaymentStatusChange(selectedOrder.id, 'pending')}
-                    disabled={updatePaymentStatus.isPending}
+                    disabled={updatePaymentStatus.isPending || sendingNotification}
                   >
                     <Clock className="h-4 w-4 mr-1" />
                     Pending
@@ -256,12 +300,17 @@ export default function AdminOrders() {
                     size="sm"
                     variant={selectedOrder.payment_status === 'failed' ? 'destructive' : 'outline'}
                     onClick={() => handlePaymentStatusChange(selectedOrder.id, 'failed')}
-                    disabled={updatePaymentStatus.isPending}
+                    disabled={updatePaymentStatus.isPending || sendingNotification}
                   >
                     <XCircle className="h-4 w-4 mr-1" />
                     Failed
                   </Button>
                 </div>
+                {selectedOrder.customer_email && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Email notification will be sent to {selectedOrder.customer_email}
+                  </p>
+                )}
               </div>
             </div>
           )}
