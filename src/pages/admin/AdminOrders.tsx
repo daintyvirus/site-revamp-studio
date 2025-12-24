@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye } from 'lucide-react';
+import { Eye, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useAdminOrders, useUpdateOrderStatus } from '@/hooks/useOrders';
+import { useAdminOrders, useUpdateOrderStatus, useUpdatePaymentStatus } from '@/hooks/useOrders';
 import type { Order } from '@/types/database';
 import { toast } from 'sonner';
 
@@ -36,10 +36,18 @@ const statusColors: Record<string, 'default' | 'secondary' | 'destructive'> = {
   cancelled: 'destructive',
 };
 
+const paymentStatusColors: Record<string, string> = {
+  pending: 'bg-yellow-500/20 text-yellow-600 border-yellow-500/30',
+  paid: 'bg-green-500/20 text-green-600 border-green-500/30',
+  failed: 'bg-red-500/20 text-red-600 border-red-500/30',
+  refunded: 'bg-gray-500/20 text-gray-600 border-gray-500/30',
+};
+
 export default function AdminOrders() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const { data: orders, isLoading } = useAdminOrders();
   const updateStatus = useUpdateOrderStatus();
+  const updatePaymentStatus = useUpdatePaymentStatus();
 
   const handleStatusChange = async (orderId: string, status: string) => {
     try {
@@ -47,6 +55,19 @@ export default function AdminOrders() {
       toast.success('Order status updated');
     } catch (error) {
       toast.error('Failed to update status');
+    }
+  };
+
+  const handlePaymentStatusChange = async (orderId: string, paymentStatus: string) => {
+    try {
+      await updatePaymentStatus.mutateAsync({ orderId, paymentStatus });
+      // Update selected order state if it's open
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder({ ...selectedOrder, payment_status: paymentStatus });
+      }
+      toast.success(`Payment marked as ${paymentStatus}`);
+    } catch (error) {
+      toast.error('Failed to update payment status');
     }
   };
 
@@ -113,7 +134,7 @@ export default function AdminOrders() {
                       </Select>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'}>
+                      <Badge className={paymentStatusColors[order.payment_status] || paymentStatusColors.pending}>
                         {order.payment_status}
                       </Badge>
                     </TableCell>
@@ -163,7 +184,7 @@ export default function AdminOrders() {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Payment</p>
-                  <Badge variant={selectedOrder.payment_status === 'paid' ? 'default' : 'secondary'}>
+                  <Badge className={paymentStatusColors[selectedOrder.payment_status] || paymentStatusColors.pending}>
                     {selectedOrder.payment_status}
                   </Badge>
                 </div>
@@ -206,6 +227,42 @@ export default function AdminOrders() {
                   <p className="text-sm">{selectedOrder.notes}</p>
                 </div>
               )}
+
+              {/* Payment Verification Actions */}
+              <div className="border-t border-border pt-4">
+                <p className="font-semibold mb-3">Payment Verification</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant={selectedOrder.payment_status === 'paid' ? 'default' : 'outline'}
+                    className={selectedOrder.payment_status === 'paid' ? 'bg-green-600 hover:bg-green-700' : ''}
+                    onClick={() => handlePaymentStatusChange(selectedOrder.id, 'paid')}
+                    disabled={updatePaymentStatus.isPending}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Verified / Paid
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={selectedOrder.payment_status === 'pending' ? 'default' : 'outline'}
+                    className={selectedOrder.payment_status === 'pending' ? 'bg-yellow-600 hover:bg-yellow-700' : ''}
+                    onClick={() => handlePaymentStatusChange(selectedOrder.id, 'pending')}
+                    disabled={updatePaymentStatus.isPending}
+                  >
+                    <Clock className="h-4 w-4 mr-1" />
+                    Pending
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={selectedOrder.payment_status === 'failed' ? 'destructive' : 'outline'}
+                    onClick={() => handlePaymentStatusChange(selectedOrder.id, 'failed')}
+                    disabled={updatePaymentStatus.isPending}
+                  >
+                    <XCircle className="h-4 w-4 mr-1" />
+                    Failed
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </DialogContent>
