@@ -13,6 +13,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { cn } from '@/lib/utils';
 
 export default function Header() {
@@ -22,9 +23,16 @@ export default function Header() {
   const { user, isAdmin, signOut } = useAuth();
   const { data: cart } = useCart();
   const { data: wishlist } = useWishlist();
+  const { data: settings } = useSiteSettings();
 
   const cartCount = cart?.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
   const wishlistCount = wishlist?.length ?? 0;
+  
+  // Get site name from settings
+  const siteName = settings?.site_name || 'GOLDEN BUMPS';
+  const nameParts = siteName.split(' ');
+  const firstPart = nameParts[0] || 'GOLDEN';
+  const secondPart = nameParts.slice(1).join(' ') || 'BUMPS';
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +58,7 @@ export default function Header() {
               <div className="absolute inset-0 blur-lg bg-primary/30 group-hover:bg-primary/50 transition-all" />
             </div>
             <span className="hidden sm:block font-display text-xl font-bold tracking-wider text-foreground">
-              GOLDEN<span className="text-primary">BUMPS</span>
+              {firstPart}<span className="text-primary">{secondPart}</span>
             </span>
           </Link>
 

@@ -24,6 +24,8 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
 import AdminEmailTemplates from "./pages/admin/AdminEmailTemplates";
 import AdminHeroImages from "./pages/admin/AdminHeroImages";
+import AdminSiteSettings from "./pages/admin/AdminSiteSettings";
+import AdminBrands from "./pages/admin/AdminBrands";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -76,10 +78,12 @@ function AnimatedRoutes() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/products" element={<AdminProducts />} />
           <Route path="/admin/categories" element={<AdminCategories />} />
+          <Route path="/admin/brands" element={<AdminBrands />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/admin/payment-methods" element={<AdminPaymentMethods />} />
           <Route path="/admin/email-templates" element={<AdminEmailTemplates />} />
           <Route path="/admin/hero-images" element={<AdminHeroImages />} />
+          <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </motion.div>
