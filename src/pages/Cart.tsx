@@ -120,8 +120,8 @@ export default function Cart() {
                   <span className="text-primary">${total.toFixed(2)}</span>
                 </div>
               </div>
-              <Button className="w-full glow-purple" size="lg">
-                Proceed to Checkout
+              <Button asChild className="w-full glow-purple" size="lg">
+                <Link to="/checkout">Proceed to Checkout</Link>
               </Button>
             </div>
           </div>
