@@ -138,10 +138,20 @@ export default function AdminOrders() {
           </DialogHeader>
           {selectedOrder && (
             <div className="space-y-4">
+              {/* Customer Info */}
+              {(selectedOrder.customer_name || selectedOrder.customer_phone || selectedOrder.customer_email) && (
+                <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                  <p className="font-semibold text-sm">Customer Info</p>
+                  {selectedOrder.customer_name && <p className="text-sm">{selectedOrder.customer_name}</p>}
+                  {selectedOrder.customer_email && <p className="text-sm text-muted-foreground">{selectedOrder.customer_email}</p>}
+                  {selectedOrder.customer_phone && <p className="text-sm text-muted-foreground">{selectedOrder.customer_phone}</p>}
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Order ID</p>
-                  <p className="font-mono">{selectedOrder.id}</p>
+                  <p className="font-mono text-xs">{selectedOrder.id}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Date</p>
@@ -157,6 +167,20 @@ export default function AdminOrders() {
                     {selectedOrder.payment_status}
                   </Badge>
                 </div>
+                {selectedOrder.payment_method && (
+                  <div>
+                    <p className="text-muted-foreground">Method</p>
+                    <p className="capitalize">{selectedOrder.payment_method}</p>
+                  </div>
+                )}
+                {selectedOrder.transaction_id && (
+                  <div>
+                    <p className="text-muted-foreground">Transaction ID</p>
+                    <p className="font-mono text-xs bg-yellow-100 dark:bg-yellow-900/30 px-2 py-1 rounded inline-block">
+                      {selectedOrder.transaction_id}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="border-t border-border pt-4">
