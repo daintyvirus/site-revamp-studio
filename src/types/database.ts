@@ -30,6 +30,9 @@ export interface Product {
   stock: number;
   is_featured: boolean;
   is_active: boolean;
+  flash_sale_enabled: boolean;
+  sale_start_date: string | null;
+  sale_end_date: string | null;
   created_at: string;
   updated_at: string;
   category?: Category;

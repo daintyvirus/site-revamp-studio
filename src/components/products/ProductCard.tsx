@@ -1,5 +1,6 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingCart, Zap } from 'lucide-react';
+import { Heart, ShoppingCart, Zap, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAddToCart } from '@/hooks/useCart';
@@ -12,11 +13,69 @@ interface ProductCardProps {
   product: Product;
 }
 
+interface CountdownDisplayProps {
+  endDate: string;
+}
+
+function CountdownDisplay({ endDate }: CountdownDisplayProps) {
+  const [timeLeft, setTimeLeft] = useState({
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const difference = new Date(endDate).getTime() - new Date().getTime();
+      
+      if (difference <= 0) {
+        setIsExpired(true);
+        return;
+      }
+
+      const totalHours = Math.floor(difference / (1000 * 60 * 60));
+      setTimeLeft({
+        hours: totalHours,
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
+      });
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(timer);
+  }, [endDate]);
+
+  if (isExpired) return null;
+
+  return (
+    <div className="flex items-center gap-1 text-xs font-mono">
+      <Clock className="h-3 w-3" />
+      <span className="bg-destructive/20 text-destructive px-1 rounded font-bold">
+        {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
+      </span>
+    </div>
+  );
+}
+
 export default function ProductCard({ product }: ProductCardProps) {
   const { user } = useAuth();
   const addToCart = useAddToCart();
   const toggleWishlist = useToggleWishlist();
   const isInWishlist = useIsInWishlist(product.id);
+
+  // Check if flash sale is active
+  const now = new Date();
+  const saleStartDate = product.sale_start_date ? new Date(product.sale_start_date) : null;
+  const saleEndDate = product.sale_end_date ? new Date(product.sale_end_date) : null;
+  
+  const isFlashSaleActive = product.flash_sale_enabled && 
+    product.sale_price && 
+    product.sale_price < product.price &&
+    (!saleStartDate || saleStartDate <= now) &&
+    (!saleEndDate || saleEndDate > now);
 
   const hasDiscount = product.sale_price && product.sale_price < product.price;
   const displayPrice = hasDiscount ? product.sale_price : product.price;
@@ -63,7 +122,13 @@ export default function ProductCard({ product }: ProductCardProps) {
 
           {/* Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-2">
-            {hasDiscount && (
+            {isFlashSaleActive && (
+              <Badge variant="destructive" className="font-display animate-pulse shadow-lg shadow-destructive/30 bg-gradient-to-r from-destructive to-orange-500 text-white">
+                <Zap className="h-3 w-3 mr-1" />
+                Flash Sale! -{discountPercent}%
+              </Badge>
+            )}
+            {!isFlashSaleActive && hasDiscount && (
               <Badge variant="destructive" className="font-display animate-bounce-in shadow-lg shadow-destructive/30 bg-destructive text-destructive-foreground">
                 <span className="mr-1">Sale!</span> -{discountPercent}%
               </Badge>
@@ -135,8 +200,19 @@ export default function ProductCard({ product }: ProductCardProps) {
             <h3 className="font-display font-semibold text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors duration-300">
               {product.name}
             </h3>
+            
+            {/* Flash Sale Countdown */}
+            {isFlashSaleActive && saleEndDate && (
+              <div className="mb-2">
+                <CountdownDisplay endDate={product.sale_end_date!} />
+              </div>
+            )}
+            
             <div className="flex items-center gap-2">
-              <span className="font-display text-lg font-bold text-foreground group-hover:text-primary transition-colors duration-300">
+              <span className={cn(
+                "font-display text-lg font-bold transition-colors duration-300",
+                isFlashSaleActive ? "text-destructive" : "text-foreground group-hover:text-primary"
+              )}>
                 ${displayPrice?.toFixed(2)}
               </span>
               {hasDiscount && (
@@ -149,7 +225,12 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
         
         {/* Bottom Glow Line */}
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className={cn(
+          "absolute bottom-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-500",
+          isFlashSaleActive 
+            ? "bg-gradient-to-r from-transparent via-destructive to-transparent" 
+            : "bg-gradient-to-r from-transparent via-primary to-transparent"
+        )} />
       </div>
     </Link>
   );
