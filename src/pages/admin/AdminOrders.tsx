@@ -80,15 +80,47 @@ export default function AdminOrders() {
     }
   };
 
+  const sendDeliveryNotification = async (order: Order) => {
+    if (!order.customer_email) {
+      console.log('No customer email, skipping delivery notification');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('send-delivery-notification', {
+        body: {
+          customerEmail: order.customer_email,
+          customerName: order.customer_name || 'Valued Customer',
+          orderId: order.id,
+          orderTotal: order.total,
+        },
+      });
+
+      if (error) {
+        console.error('Error sending delivery notification:', error);
+        toast.error('Failed to send delivery notification');
+      } else {
+        console.log('Delivery notification sent:', data);
+        toast.success('Delivery confirmation sent to customer');
+      }
+    } catch (error) {
+      console.error('Error invoking delivery notification function:', error);
+    }
+  };
+
   const handleStatusChange = async (orderId: string, status: string) => {
     try {
       await updateStatus.mutateAsync({ orderId, status });
       
-      // Send shipping notification when status changes to shipped
-      if (status === 'shipped') {
-        const order = orders?.find(o => o.id === orderId);
-        if (order) {
+      const order = orders?.find(o => o.id === orderId);
+      if (order) {
+        // Send shipping notification when status changes to shipped
+        if (status === 'shipped') {
           await sendShippingNotification(order);
+        }
+        // Send delivery notification when status changes to completed
+        if (status === 'completed') {
+          await sendDeliveryNotification(order);
         }
       }
       
