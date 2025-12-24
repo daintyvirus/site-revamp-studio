@@ -349,14 +349,6 @@ serve(async (req: Request): Promise<Response> => {
   }
 });
 
-function replaceShortcodes(text: string, data: Record<string, string>): string {
-  let result = text;
-  for (const [key, value] of Object.entries(data)) {
-    const regex = new RegExp(`\\{${key}\\}`, 'gi');
-    result = result.replace(regex, value || '');
-  }
-  return result;
-}
 
 function generateDefaultEmailHtml(
   shortcodeData: Record<string, string>,
