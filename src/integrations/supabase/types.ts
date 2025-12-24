@@ -107,58 +107,120 @@ export type Database = {
         }
         Relationships: []
       }
+      email_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          order_id: string | null
+          recipient_email: string
+          sent_at: string
+          status: string
+          subject: string
+          template_type: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          order_id?: string | null
+          recipient_email: string
+          sent_at?: string
+          status?: string
+          subject: string
+          template_type: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          order_id?: string | null
+          recipient_email?: string
+          sent_at?: string
+          status?: string
+          subject?: string
+          template_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_templates: {
         Row: {
           body_content: string | null
           body_intro: string
+          company_logo_url: string | null
+          company_name: string | null
           created_at: string
+          custom_css: string | null
           footer_text: string | null
           header_color: string
           header_title: string
+          help_center_url: string | null
           id: string
           is_active: boolean
           sender_email: string
           sender_name: string
           show_order_details: boolean
           show_tracking_button: boolean
+          social_links: Json | null
           status_type: string
           subject_template: string
+          support_email: string | null
           tracking_button_text: string | null
           updated_at: string
         }
         Insert: {
           body_content?: string | null
           body_intro: string
+          company_logo_url?: string | null
+          company_name?: string | null
           created_at?: string
+          custom_css?: string | null
           footer_text?: string | null
           header_color?: string
           header_title: string
+          help_center_url?: string | null
           id?: string
           is_active?: boolean
           sender_email?: string
           sender_name?: string
           show_order_details?: boolean
           show_tracking_button?: boolean
+          social_links?: Json | null
           status_type: string
           subject_template: string
+          support_email?: string | null
           tracking_button_text?: string | null
           updated_at?: string
         }
         Update: {
           body_content?: string | null
           body_intro?: string
+          company_logo_url?: string | null
+          company_name?: string | null
           created_at?: string
+          custom_css?: string | null
           footer_text?: string | null
           header_color?: string
           header_title?: string
+          help_center_url?: string | null
           id?: string
           is_active?: boolean
           sender_email?: string
           sender_name?: string
           show_order_details?: boolean
           show_tracking_button?: boolean
+          social_links?: Json | null
           status_type?: string
           subject_template?: string
+          support_email?: string | null
           tracking_button_text?: string | null
           updated_at?: string
         }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, Mail, Eye, Palette, FileText, Loader2, Send } from 'lucide-react';
+import { Save, Mail, Eye, Palette, FileText, Loader2, Send, History, Code, Building2 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,8 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -16,11 +18,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { useEmailTemplates, useUpdateEmailTemplate, statusTypeLabels, EmailTemplate } from '@/hooks/useEmailTemplates';
+import { useEmailTemplates, useUpdateEmailTemplate, useEmailLogs, statusTypeLabels, availableShortcodes, EmailTemplate } from '@/hooks/useEmailTemplates';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
-// Map status_type to edge function name
 const statusToFunctionMap: Record<string, string> = {
   order_confirmation: 'send-order-confirmation',
   payment_paid: 'send-payment-notification',
@@ -33,12 +34,13 @@ const statusToFunctionMap: Record<string, string> = {
 
 export default function AdminEmailTemplates() {
   const { data: templates, isLoading } = useEmailTemplates();
+  const { data: emailLogs, isLoading: logsLoading } = useEmailLogs();
   const updateTemplate = useUpdateEmailTemplate();
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
   const [formData, setFormData] = useState<Partial<EmailTemplate>>({});
+  const [showLogs, setShowLogs] = useState(false);
   
-  // Test email state
   const [testEmailTemplate, setTestEmailTemplate] = useState<EmailTemplate | null>(null);
   const [testEmailAddress, setTestEmailAddress] = useState('');
   const [sendingTestEmail, setSendingTestEmail] = useState(false);
@@ -58,20 +60,20 @@ export default function AdminEmailTemplates() {
       tracking_button_text: template.tracking_button_text || '',
       footer_text: template.footer_text || '',
       is_active: template.is_active,
+      support_email: template.support_email || '',
+      company_name: template.company_name || '',
+      company_logo_url: template.company_logo_url || '',
+      help_center_url: template.help_center_url || '',
     });
   };
 
   const handleSave = async () => {
     if (!editingTemplate) return;
-
     try {
-      await updateTemplate.mutateAsync({
-        id: editingTemplate.id,
-        ...formData,
-      });
+      await updateTemplate.mutateAsync({ id: editingTemplate.id, ...formData });
       toast.success('Email template updated successfully');
       setEditingTemplate(null);
-    } catch (error) {
+    } catch {
       toast.error('Failed to update email template');
     }
   };
@@ -81,57 +83,36 @@ export default function AdminEmailTemplates() {
       toast.error('Please enter an email address');
       return;
     }
-
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(testEmailAddress)) {
       toast.error('Please enter a valid email address');
       return;
     }
-
     setSendingTestEmail(true);
-
     try {
       const functionName = statusToFunctionMap[testEmailTemplate.status_type];
-      
-      // Build request body based on status type
       let body: Record<string, any> = {
         customerEmail: testEmailAddress,
         customerName: 'Test Customer',
         orderId: 'test12345678',
         orderTotal: 1500,
       };
-
-      // Add specific fields based on status type
-      if (testEmailTemplate.status_type === 'payment_paid') {
-        body.paymentStatus = 'paid';
-      } else if (testEmailTemplate.status_type === 'payment_failed') {
-        body.paymentStatus = 'failed';
-      } else if (testEmailTemplate.status_type === 'order_confirmation') {
+      if (testEmailTemplate.status_type === 'payment_paid') body.paymentStatus = 'paid';
+      else if (testEmailTemplate.status_type === 'payment_failed') body.paymentStatus = 'failed';
+      else if (testEmailTemplate.status_type === 'order_confirmation') {
         body.paymentMethod = 'GCash';
         body.transactionId = 'TEST-TXN-123456';
-        body.items = [
-          { name: 'Test Product 1', quantity: 2, price: 500 },
-          { name: 'Test Product 2', quantity: 1, price: 500 },
-        ];
-      } else if (testEmailTemplate.status_type === 'refunded') {
-        body.refundAmount = 1500;
-      }
+        body.items = [{ name: 'Test Product 1', quantity: 2, price: 500 }, { name: 'Test Product 2', quantity: 1, price: 500 }];
+      } else if (testEmailTemplate.status_type === 'refunded') body.refundAmount = 1500;
 
       const { data, error } = await supabase.functions.invoke(functionName, { body });
-
-      if (error) {
-        console.error('Error sending test email:', error);
-        toast.error('Failed to send test email');
-      } else if (data?.success) {
+      if (error) toast.error('Failed to send test email');
+      else if (data?.success) {
         toast.success(`Test email sent to ${testEmailAddress}`);
         setTestEmailTemplate(null);
         setTestEmailAddress('');
-      } else {
-        toast.error(data?.message || 'Failed to send test email');
-      }
-    } catch (error) {
-      console.error('Error sending test email:', error);
+      } else toast.error(data?.message || 'Failed to send test email');
+    } catch {
       toast.error('Failed to send test email');
     } finally {
       setSendingTestEmail(false);
@@ -151,64 +132,25 @@ export default function AdminEmailTemplates() {
     return colors[statusType] || 'bg-gray-500/20 text-gray-600 border-gray-500/30';
   };
 
-  const renderPreviewEmail = (template: EmailTemplate) => {
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f5f5f5; }
-          .container { max-width: 600px; margin: 20px auto; }
-          .header { background: linear-gradient(135deg, ${template.header_color} 0%, ${template.header_color}CC 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
-          .header h1 { margin: 0; font-size: 28px; }
-          .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; }
-          .order-info { background: #F5F3FF; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #DDD6FE; }
-          .cta { display: inline-block; background: linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%); color: #1a1a1a; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; }
-          .footer { background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none; color: #6b7280; font-size: 12px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>${template.header_title}</h1>
-          </div>
-          <div class="content">
-            <p>Dear <strong>Customer Name</strong>,</p>
-            <p>${template.body_intro}</p>
-            ${template.body_content ? `<p>${template.body_content}</p>` : ''}
-            ${template.show_order_details ? `
-              <div class="order-info">
-                <p><strong>Order ID:</strong> #ABC12345</p>
-                <p><strong>Total:</strong> ₱1,500.00</p>
-              </div>
-            ` : ''}
-            ${template.show_tracking_button ? `
-              <div style="text-align: center; margin: 25px 0;">
-                <a href="#" class="cta">${template.tracking_button_text || 'Track Your Order'}</a>
-              </div>
-            ` : ''}
-            <p>Best regards,<br><strong>${template.sender_name}</strong></p>
-          </div>
-          <div class="footer">
-            <p>${template.footer_text}</p>
-            <p>Sent from: ${template.sender_email}</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+  const insertShortcode = (code: string, field: 'body_intro' | 'body_content' | 'footer_text' | 'subject_template' | 'header_title') => {
+    setFormData({ ...formData, [field]: (formData[field] || '') + code });
   };
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="font-display text-3xl font-bold flex items-center gap-3">
-            <Mail className="h-8 w-8 text-primary" />
-            Email Templates
-          </h1>
-          <p className="text-muted-foreground">Customize email notifications for each order status</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-display text-3xl font-bold flex items-center gap-3">
+              <Mail className="h-8 w-8 text-primary" />
+              Email Templates
+            </h1>
+            <p className="text-muted-foreground">Customize email notifications with shortcodes</p>
+          </div>
+          <Button variant="outline" onClick={() => setShowLogs(true)}>
+            <History className="h-4 w-4 mr-2" />
+            View Logs
+          </Button>
         </div>
 
         {isLoading ? (
@@ -237,30 +179,16 @@ export default function AdminEmailTemplates() {
                     />
                   </div>
                   <CardTitle className="text-lg mt-2">{template.header_title}</CardTitle>
-                  <CardDescription className="text-xs">
-                    From: {template.sender_name} &lt;{template.sender_email}&gt;
-                  </CardDescription>
+                  <CardDescription className="text-xs">From: {template.sender_name} &lt;{template.sender_email}&gt;</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                    {template.body_intro}
-                  </p>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{template.body_intro}</p>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => handleEdit(template)} className="flex-1">
-                      <FileText className="h-4 w-4 mr-1" />
-                      Edit
+                      <FileText className="h-4 w-4 mr-1" /> Edit
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setPreviewTemplate(template)}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setTestEmailTemplate(template)}
-                      title="Send Test Email"
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setPreviewTemplate(template)}><Eye className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => setTestEmailTemplate(template)} title="Send Test Email"><Send className="h-4 w-4" /></Button>
                   </div>
                 </CardContent>
               </Card>
@@ -271,253 +199,205 @@ export default function AdminEmailTemplates() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingTemplate} onOpenChange={() => setEditingTemplate(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-display flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              Edit Email Template
-            </DialogTitle>
+            <DialogTitle className="font-display flex items-center gap-2"><Mail className="h-5 w-5" /> Edit Email Template</DialogTitle>
           </DialogHeader>
 
           <Tabs defaultValue="sender" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="sender">Sender</TabsTrigger>
               <TabsTrigger value="content">Content</TabsTrigger>
+              <TabsTrigger value="footer">Footer</TabsTrigger>
               <TabsTrigger value="design">Design</TabsTrigger>
-              <TabsTrigger value="options">Options</TabsTrigger>
+              <TabsTrigger value="shortcodes">Shortcodes</TabsTrigger>
             </TabsList>
 
             <TabsContent value="sender" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="sender_email">Sender Email</Label>
-                <Input
-                  id="sender_email"
-                  type="email"
-                  value={formData.sender_email || ''}
-                  onChange={(e) => setFormData({ ...formData, sender_email: e.target.value })}
-                  placeholder="support@goldenbumps.com"
-                />
-                <p className="text-xs text-muted-foreground">
-                  This email must be verified with your email provider (Hostinger)
-                </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Sender Email</Label>
+                  <Input value={formData.sender_email || ''} onChange={(e) => setFormData({ ...formData, sender_email: e.target.value })} placeholder="support@goldenbumps.com" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Sender Name</Label>
+                  <Input value={formData.sender_name || ''} onChange={(e) => setFormData({ ...formData, sender_name: e.target.value })} placeholder="Golden Bumps" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Support Email (for footer)</Label>
+                  <Input value={formData.support_email || ''} onChange={(e) => setFormData({ ...formData, support_email: e.target.value })} placeholder="support@goldenbumps.com" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Company Name</Label>
+                  <Input value={formData.company_name || ''} onChange={(e) => setFormData({ ...formData, company_name: e.target.value })} placeholder="Golden Bumps" />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="sender_name">Sender Name</Label>
-                <Input
-                  id="sender_name"
-                  value={formData.sender_name || ''}
-                  onChange={(e) => setFormData({ ...formData, sender_name: e.target.value })}
-                  placeholder="Golden Bumps"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="subject_template">Email Subject</Label>
-                <Input
-                  id="subject_template"
-                  value={formData.subject_template || ''}
-                  onChange={(e) => setFormData({ ...formData, subject_template: e.target.value })}
-                  placeholder="Order Confirmed - #{ORDER_ID} | Golden Bumps"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Use {'{ORDER_ID}'} to include the order ID
-                </p>
+                <Label>Email Subject</Label>
+                <Input value={formData.subject_template || ''} onChange={(e) => setFormData({ ...formData, subject_template: e.target.value })} placeholder="Order Confirmed - #{order_id}" />
+                <p className="text-xs text-muted-foreground">Use shortcodes like {'{order_id}'}, {'{customer_name}'}</p>
               </div>
             </TabsContent>
 
             <TabsContent value="content" className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="header_title">Email Header Title</Label>
-                <Input
-                  id="header_title"
-                  value={formData.header_title || ''}
-                  onChange={(e) => setFormData({ ...formData, header_title: e.target.value })}
-                  placeholder="🎉 Order Confirmed!"
-                />
+                <Label>Header Title</Label>
+                <Input value={formData.header_title || ''} onChange={(e) => setFormData({ ...formData, header_title: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="body_intro">Introduction Text</Label>
-                <Textarea
-                  id="body_intro"
-                  value={formData.body_intro || ''}
-                  onChange={(e) => setFormData({ ...formData, body_intro: e.target.value })}
-                  placeholder="Thank you for your order!"
-                  rows={3}
-                />
+                <Label>Introduction Text</Label>
+                <Textarea value={formData.body_intro || ''} onChange={(e) => setFormData({ ...formData, body_intro: e.target.value })} rows={3} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="body_content">Additional Content</Label>
-                <Textarea
-                  id="body_content"
-                  value={formData.body_content || ''}
-                  onChange={(e) => setFormData({ ...formData, body_content: e.target.value })}
-                  placeholder="Any additional message..."
-                  rows={3}
-                />
+                <Label>Additional Content</Label>
+                <Textarea value={formData.body_content || ''} onChange={(e) => setFormData({ ...formData, body_content: e.target.value })} rows={3} />
               </div>
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div><Label>Show Order Details</Label></div>
+                <Switch checked={formData.show_order_details ?? true} onCheckedChange={(checked) => setFormData({ ...formData, show_order_details: checked })} />
+              </div>
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div><Label>Show Tracking Button</Label></div>
+                <Switch checked={formData.show_tracking_button ?? true} onCheckedChange={(checked) => setFormData({ ...formData, show_tracking_button: checked })} />
+              </div>
+              {formData.show_tracking_button && (
+                <div className="space-y-2">
+                  <Label>Button Text</Label>
+                  <Input value={formData.tracking_button_text || ''} onChange={(e) => setFormData({ ...formData, tracking_button_text: e.target.value })} placeholder="Track Your Order" />
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="footer" className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="footer_text">Footer Text</Label>
-                <Input
-                  id="footer_text"
-                  value={formData.footer_text || ''}
-                  onChange={(e) => setFormData({ ...formData, footer_text: e.target.value })}
-                  placeholder="This is an automated message from Golden Bumps."
-                />
+                <Label>Footer Text (Full Customization)</Label>
+                <Textarea value={formData.footer_text || ''} onChange={(e) => setFormData({ ...formData, footer_text: e.target.value })} rows={6} placeholder="This is an automated message from {company_name}.&#10;&#10;Please do not reply directly to this email.&#10;&#10;For support, contact us at {support_email}" />
+                <p className="text-xs text-muted-foreground">Use shortcodes like {'{company_name}'}, {'{support_email}'} for dynamic content</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => insertShortcode('{company_name}', 'footer_text')}><Building2 className="h-3 w-3 mr-1" /> Company Name</Button>
+                <Button variant="outline" size="sm" onClick={() => insertShortcode('{support_email}', 'footer_text')}><Mail className="h-3 w-3 mr-1" /> Support Email</Button>
+                <Button variant="outline" size="sm" onClick={() => insertShortcode('{shop_url}', 'footer_text')}><Code className="h-3 w-3 mr-1" /> Shop URL</Button>
               </div>
             </TabsContent>
 
             <TabsContent value="design" className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="header_color" className="flex items-center gap-2">
-                  <Palette className="h-4 w-4" />
-                  Header Color
-                </Label>
+                <Label className="flex items-center gap-2"><Palette className="h-4 w-4" /> Header Color</Label>
                 <div className="flex gap-2">
-                  <Input
-                    id="header_color"
-                    type="color"
-                    value={formData.header_color || '#8B5CF6'}
-                    onChange={(e) => setFormData({ ...formData, header_color: e.target.value })}
-                    className="w-16 h-10 p-1 cursor-pointer"
-                  />
-                  <Input
-                    value={formData.header_color || '#8B5CF6'}
-                    onChange={(e) => setFormData({ ...formData, header_color: e.target.value })}
-                    placeholder="#8B5CF6"
-                    className="flex-1"
-                  />
+                  <Input type="color" value={formData.header_color || '#8B5CF6'} onChange={(e) => setFormData({ ...formData, header_color: e.target.value })} className="w-16 h-10 p-1 cursor-pointer" />
+                  <Input value={formData.header_color || '#8B5CF6'} onChange={(e) => setFormData({ ...formData, header_color: e.target.value })} className="flex-1" />
                 </div>
               </div>
-              <div className="p-4 rounded-lg" style={{ backgroundColor: formData.header_color || '#8B5CF6' }}>
-                <p className="text-white text-center font-bold">Header Preview</p>
+              <div className="space-y-2">
+                <Label>Company Logo URL</Label>
+                <Input value={formData.company_logo_url || ''} onChange={(e) => setFormData({ ...formData, company_logo_url: e.target.value })} placeholder="https://example.com/logo.png" />
               </div>
             </TabsContent>
 
-            <TabsContent value="options" className="space-y-4 mt-4">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <Label>Show Order Details</Label>
-                  <p className="text-xs text-muted-foreground">Display order ID and total in email</p>
-                </div>
-                <Switch
-                  checked={formData.show_order_details ?? true}
-                  onCheckedChange={(checked) => setFormData({ ...formData, show_order_details: checked })}
-                />
-              </div>
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <Label>Show Tracking Button</Label>
-                  <p className="text-xs text-muted-foreground">Include call-to-action button</p>
-                </div>
-                <Switch
-                  checked={formData.show_tracking_button ?? true}
-                  onCheckedChange={(checked) => setFormData({ ...formData, show_tracking_button: checked })}
-                />
-              </div>
-              {formData.show_tracking_button && (
-                <div className="space-y-2">
-                  <Label htmlFor="tracking_button_text">Button Text</Label>
-                  <Input
-                    id="tracking_button_text"
-                    value={formData.tracking_button_text || ''}
-                    onChange={(e) => setFormData({ ...formData, tracking_button_text: e.target.value })}
-                    placeholder="Track Your Order"
-                  />
-                </div>
-              )}
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <Label>Template Active</Label>
-                  <p className="text-xs text-muted-foreground">Enable/disable this email notification</p>
-                </div>
-                <Switch
-                  checked={formData.is_active ?? true}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                />
-              </div>
+            <TabsContent value="shortcodes" className="mt-4">
+              <Card>
+                <CardHeader><CardTitle className="text-base flex items-center gap-2"><Code className="h-4 w-4" /> Available Shortcodes</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-2">
+                    {availableShortcodes.map((sc) => (
+                      <div key={sc.code} className="flex items-center justify-between p-2 border rounded text-sm">
+                        <div>
+                          <code className="bg-muted px-1 rounded text-xs">{sc.code}</code>
+                          <p className="text-xs text-muted-foreground mt-1">{sc.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
 
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setEditingTemplate(null)}>
-              Cancel
+          <div className="flex gap-2 pt-4">
+            <Button onClick={handleSave} disabled={updateTemplate.isPending} className="flex-1">
+              {updateTemplate.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />} Save Changes
             </Button>
-            <Button onClick={handleSave} disabled={updateTemplate.isPending}>
-              {updateTemplate.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Save Changes
-            </Button>
+            <Button variant="outline" onClick={() => setEditingTemplate(null)}>Cancel</Button>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Preview Dialog */}
       <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-display flex items-center gap-2">
-              <Eye className="h-5 w-5" />
-              Email Preview - {previewTemplate && statusTypeLabels[previewTemplate.status_type]}
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh]">
+          <DialogHeader><DialogTitle>Email Preview</DialogTitle></DialogHeader>
           {previewTemplate && (
-            <div 
-              className="border rounded-lg overflow-hidden"
-              dangerouslySetInnerHTML={{ __html: renderPreviewEmail(previewTemplate) }}
-            />
+            <div className="border rounded-lg overflow-hidden">
+              <div className="p-4 text-white text-center" style={{ background: `linear-gradient(135deg, ${previewTemplate.header_color}, ${previewTemplate.header_color}CC)` }}>
+                <h2 className="text-xl font-bold">{previewTemplate.header_title}</h2>
+              </div>
+              <div className="p-4 bg-white">
+                <p>Dear <strong>Customer Name</strong>,</p>
+                <p className="mt-2">{previewTemplate.body_intro}</p>
+                {previewTemplate.body_content && <p className="mt-2">{previewTemplate.body_content}</p>}
+              </div>
+              <div className="p-4 bg-muted text-center text-xs text-muted-foreground whitespace-pre-line">{previewTemplate.footer_text}</div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Send Test Email Dialog */}
-      <Dialog open={!!testEmailTemplate} onOpenChange={() => { setTestEmailTemplate(null); setTestEmailAddress(''); }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display flex items-center gap-2">
-              <Send className="h-5 w-5" />
-              Send Test Email
-            </DialogTitle>
-            <DialogDescription>
-              Send a test email for "{testEmailTemplate && statusTypeLabels[testEmailTemplate.status_type]}" template to preview how it looks in an email client.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
+      {/* Test Email Dialog */}
+      <Dialog open={!!testEmailTemplate} onOpenChange={() => setTestEmailTemplate(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Send Test Email</DialogTitle><DialogDescription>Send a test email to verify the template.</DialogDescription></DialogHeader>
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="test_email">Email Address</Label>
-              <Input
-                id="test_email"
-                type="email"
-                value={testEmailAddress}
-                onChange={(e) => setTestEmailAddress(e.target.value)}
-                placeholder="your@email.com"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSendTestEmail();
-                  }
-                }}
-              />
-              <p className="text-xs text-muted-foreground">
-                A test email with sample data will be sent to this address.
-              </p>
+              <Label>Email Address</Label>
+              <Input type="email" value={testEmailAddress} onChange={(e) => setTestEmailAddress(e.target.value)} placeholder="test@example.com" />
             </div>
+            <Button onClick={handleSendTestEmail} disabled={sendingTestEmail} className="w-full">
+              {sendingTestEmail ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />} Send Test Email
+            </Button>
           </div>
+        </DialogContent>
+      </Dialog>
 
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => { setTestEmailTemplate(null); setTestEmailAddress(''); }}>
-              Cancel
-            </Button>
-            <Button onClick={handleSendTestEmail} disabled={sendingTestEmail || !testEmailAddress}>
-              {sendingTestEmail ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4 mr-2" />
-              )}
-              Send Test Email
-            </Button>
-          </div>
+      {/* Email Logs Dialog */}
+      <Dialog open={showLogs} onOpenChange={setShowLogs}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><History className="h-5 w-5" /> Email Delivery Logs</DialogTitle></DialogHeader>
+          <ScrollArea className="h-[500px]">
+            {logsLoading ? (
+              <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Recipient</TableHead>
+                    <TableHead>Subject</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {emailLogs?.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell className="text-xs">{new Date(log.sent_at).toLocaleString()}</TableCell>
+                      <TableCell><Badge variant="outline">{statusTypeLabels[log.template_type] || log.template_type}</Badge></TableCell>
+                      <TableCell className="text-xs">{log.recipient_email}</TableCell>
+                      <TableCell className="text-xs max-w-[200px] truncate">{log.subject}</TableCell>
+                      <TableCell>
+                        <Badge className={log.status === 'sent' ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'}>{log.status}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {(!emailLogs || emailLogs.length === 0) && (
+                    <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No email logs yet</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </AdminLayout>
