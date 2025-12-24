@@ -12,6 +12,9 @@ export interface PromotionalBanner {
   sort_order: number;
   starts_at: string | null;
   ends_at: string | null;
+  countdown_enabled: boolean;
+  countdown_end_time: string | null;
+  countdown_label: string | null;
   created_at: string;
   updated_at: string;
 }
