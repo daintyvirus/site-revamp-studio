@@ -15,16 +15,19 @@ async function logEmail(supabase: any, data: { order_id: string | null; template
 async function logDelivery(supabase: any, data: { order_id: string; action: string; delivery_info_snapshot?: string; performed_by?: string; error_message?: string; }) { try { await supabase.from('delivery_logs').insert(data); } catch (error) { console.error('Failed to log delivery:', error); } }
 
 function generateEmailHtml(template: EmailTemplate, shortcodeData: Record<string, string>, deliveryType: string): string {
-  const headerTitle = replaceShortcodes(template.header_title, shortcodeData);
-  const bodyIntro = replaceShortcodes(template.body_intro, shortcodeData);
-  const bodyContent = template.body_content ? replaceShortcodes(template.body_content, shortcodeData) : '';
-  const footerText = template.footer_text ? replaceShortcodes(template.footer_text, shortcodeData) : '';
-  const dynamicButtonText = `Reveal Your ${deliveryType || 'Code'}`;
-  const buttonText = template.tracking_button_text ? replaceShortcodes(template.tracking_button_text, shortcodeData) : dynamicButtonText;
+  const displayDeliveryType = deliveryType || 'Code';
+  const dataWithDeliveryType = { ...shortcodeData, delivery_type: displayDeliveryType };
+  
+  const headerTitle = replaceShortcodes(template.header_title, dataWithDeliveryType);
+  const bodyIntro = replaceShortcodes(template.body_intro, dataWithDeliveryType);
+  const bodyContent = template.body_content ? replaceShortcodes(template.body_content, dataWithDeliveryType) : '';
+  const footerText = template.footer_text ? replaceShortcodes(template.footer_text, dataWithDeliveryType) : '';
+  const defaultButtonText = `Reveal Your ${displayDeliveryType}`;
+  const buttonText = template.tracking_button_text ? replaceShortcodes(template.tracking_button_text, dataWithDeliveryType) : defaultButtonText;
   const companyName = template.company_name || 'Golden Bumps';
-  const greetingFormat = replaceShortcodes(template.greeting_format || 'Dear {customer_name},', shortcodeData);
-  const closingText = replaceShortcodes(template.closing_text || 'Best regards,', shortcodeData);
-  const signatureName = replaceShortcodes(template.signature_name || template.sender_name, shortcodeData);
+  const greetingFormat = replaceShortcodes(template.greeting_format || 'Dear {customer_name},', dataWithDeliveryType);
+  const closingText = replaceShortcodes(template.closing_text || 'Best regards,', dataWithDeliveryType);
+  const signatureName = replaceShortcodes(template.signature_name || template.sender_name, dataWithDeliveryType);
   const orderIdLabel = template.order_id_label || 'Order ID:';
   const orderTotalLabel = template.order_total_label || 'Order Total:';
   const statusLabel = template.status_label || 'Status:';
@@ -41,7 +44,7 @@ function generateEmailHtml(template: EmailTemplate, shortcodeData: Record<string
   const styles = `body{font-family:Arial,sans-serif;line-height:1.6;color:${textColor};margin:0;padding:0;background-color:#f5f5f5}.container{max-width:600px;margin:0 auto;padding:20px}.header{background:linear-gradient(135deg,${headerColor} 0%,${headerColor}CC 100%);color:white;padding:30px 20px;text-align:center;border-radius:8px 8px 0 0}.header h1{margin:0;font-size:28px}.content{background:${bgColor};padding:30px;border:1px solid #e5e7eb}.order-info{background:#f9fafb;padding:20px;border-radius:8px;margin:20px 0}.order-info p{margin:8px 0}.status-badge{display:inline-block;background:#10B981;color:white;padding:4px 12px;border-radius:20px;font-size:14px;font-weight:500}.footer{background:${footerBgColor};padding:20px;text-align:center;border-radius:0 0 8px 8px;border:1px solid #e5e7eb;border-top:none}.footer p{margin:5px 0;color:#6b7280;font-size:12px}.cta{display:inline-block;background:${buttonColor};color:${buttonTextColor};padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px}.delivery-box{background:linear-gradient(135deg,#10B981 0%,#059669 100%);color:white;padding:20px;border-radius:8px;margin:20px 0;text-align:center}.delivery-box h3{margin:0 0 10px 0}`;
 
   const logoHtml = template.company_logo_url ? `<img src="${template.company_logo_url}" alt="${companyName}" style="max-height:60px;margin-bottom:15px">` : '';
-  const deliveryBoxHtml = `<div class="delivery-box"><h3>Your Digital Delivery is Ready!</h3><p>Click the button below to securely view your ${deliveryType?.toLowerCase() || 'code'} details</p></div>`;
+  const deliveryBoxHtml = `<div class="delivery-box"><h3>Your Digital Delivery is Ready!</h3><p>Click the button below to securely view your ${displayDeliveryType.toLowerCase()} details</p></div>`;
   const orderDetailsHtml = template.show_order_details ? `<div class="order-info"><p><strong>${orderIdLabel}</strong> #${shortcodeData.order_id}</p><p><strong>${orderTotalLabel}</strong> $${shortcodeData.order_total}</p><p><strong>${statusLabel}</strong> <span class="status-badge">Delivered</span></p></div>` : '';
   const trackingButtonHtml = template.show_tracking_button ? `<div style="text-align:center;margin:25px 0"><a href="${shortcodeData.tracking_url}" class="cta">${buttonText}</a></div>` : '';
   const legalFooter = `<div style="border-top:1px solid #e5e7eb;margin-top:20px;padding-top:15px;font-size:11px;color:#9ca3af"><p><strong>Refund Policy:</strong> ${refundPolicy}</p><p><strong>Delivery:</strong> ${deliveryDisclaimer}</p><p><strong>Support Hours:</strong> ${supportHours}</p></div>`;

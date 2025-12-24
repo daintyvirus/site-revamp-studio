@@ -78,6 +78,7 @@ export const availableShortcodes = [
   { code: '{tracking_url}', description: 'Order tracking URL' },
   { code: '{shop_url}', description: 'Shop homepage URL' },
   { code: '{refund_amount}', description: 'Refund amount (for refunds)' },
+  { code: '{delivery_type}', description: 'Delivery type name (e.g., Code, Account, Gift Card)' },
 ];
 
 export function useEmailTemplates() {
