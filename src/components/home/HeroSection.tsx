@@ -17,15 +17,52 @@ const generateParticles = (count: number) => {
   }));
 };
 
+// Counter animation hook
+const useCountUp = (end: number, duration: number = 2000, start: number = 0, trigger: boolean = true) => {
+  const [count, setCount] = useState(start);
+  
+  useEffect(() => {
+    if (!trigger) return;
+    
+    let startTime: number | null = null;
+    let animationFrame: number;
+    
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      
+      // Easing function for smooth animation
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      setCount(Math.floor(easeOutQuart * (end - start) + start));
+      
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+    
+    animationFrame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [end, duration, start, trigger]);
+  
+  return count;
+};
+
 export default function HeroSection() {
   const [isVisible, setIsVisible] = useState(false);
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [statsInView, setStatsInView] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
   
   const particles = useMemo(() => generateParticles(20), []);
+  
+  // Counter values
+  const productsCount = useCountUp(10, 2000, 0, statsInView);
+  const gamersCount = useCountUp(50, 2500, 0, statsInView);
+  const supportHours = useCountUp(24, 1500, 0, statsInView);
   
   useEffect(() => {
     setIsVisible(true);
@@ -33,6 +70,26 @@ export default function HeroSection() {
       setIsTyping(true);
     }, 900);
     return () => clearTimeout(typingDelay);
+  }, []);
+
+  // Intersection Observer for stats section
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setStatsInView(true);
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+    
+    if (statsRef.current) {
+      observer.observe(statsRef.current);
+    }
+    
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -219,24 +276,30 @@ export default function HeroSection() {
           </div>
 
           {/* Stats with Counter Animation */}
-          <div className="grid grid-cols-3 gap-8 mt-16 animate-slide-up" style={{ animationDelay: '0.4s' }}>
+          <div ref={statsRef} className="grid grid-cols-3 gap-8 mt-16 animate-slide-up" style={{ animationDelay: '0.4s' }}>
             <div className="text-center group">
               <div className="relative inline-block">
-                <p className="font-display text-3xl md:text-4xl font-bold text-primary group-hover:scale-110 transition-transform">10K+</p>
+                <p className={`font-display text-3xl md:text-4xl font-bold text-primary transition-all duration-300 ${statsInView ? 'scale-100 opacity-100' : 'scale-75 opacity-0'} group-hover:scale-110`}>
+                  {productsCount}K+
+                </p>
                 <div className="absolute -inset-2 bg-primary/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <p className="text-sm text-muted-foreground mt-1">Products</p>
             </div>
             <div className="text-center group">
               <div className="relative inline-block">
-                <p className="font-display text-3xl md:text-4xl font-bold text-secondary group-hover:scale-110 transition-transform">50K+</p>
+                <p className={`font-display text-3xl md:text-4xl font-bold text-secondary transition-all duration-300 ${statsInView ? 'scale-100 opacity-100' : 'scale-75 opacity-0'} group-hover:scale-110`} style={{ transitionDelay: '0.1s' }}>
+                  {gamersCount}K+
+                </p>
                 <div className="absolute -inset-2 bg-secondary/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <p className="text-sm text-muted-foreground mt-1">Happy Gamers</p>
             </div>
             <div className="text-center group">
               <div className="relative inline-block">
-                <p className="font-display text-3xl md:text-4xl font-bold text-accent group-hover:scale-110 transition-transform">24/7</p>
+                <p className={`font-display text-3xl md:text-4xl font-bold text-accent transition-all duration-300 ${statsInView ? 'scale-100 opacity-100' : 'scale-75 opacity-0'} group-hover:scale-110`} style={{ transitionDelay: '0.2s' }}>
+                  {supportHours}/7
+                </p>
                 <div className="absolute -inset-2 bg-accent/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <p className="text-sm text-muted-foreground mt-1">Support</p>
