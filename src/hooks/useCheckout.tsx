@@ -3,6 +3,32 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useCart, useClearCart } from './useCart';
 import { toast } from '@/hooks/use-toast';
+import { z } from 'zod';
+
+// Validation schema for checkout data
+const customerInfoSchema = z.object({
+  name: z.string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(100, 'Name must be less than 100 characters')
+    .regex(/^[\p{L}\p{M}\s.'-]+$/u, 'Name contains invalid characters'),
+  email: z.string()
+    .email('Invalid email address')
+    .max(255, 'Email must be less than 255 characters'),
+  phone: z.string()
+    .min(10, 'Phone must be at least 10 characters')
+    .max(20, 'Phone must be less than 20 characters')
+    .regex(/^[0-9+\s()-]+$/, 'Phone contains invalid characters')
+});
+
+const checkoutSchema = z.object({
+  customerInfo: customerInfoSchema,
+  paymentMethod: z.string().min(1, 'Payment method is required'),
+  transactionId: z.string()
+    .min(5, 'Transaction ID must be at least 5 characters')
+    .max(50, 'Transaction ID must be less than 50 characters')
+    .regex(/^[A-Za-z0-9-]+$/, 'Transaction ID contains invalid characters'),
+  notes: z.string().max(500, 'Notes must be less than 500 characters').optional()
+});
 
 interface CustomerInfo {
   name: string;
@@ -24,14 +50,19 @@ export function useCheckout() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ customerInfo, paymentMethod, transactionId, notes }: CheckoutData) => {
+    mutationFn: async (data: CheckoutData) => {
       if (!user || !cart?.length) {
         throw new Error('No items in cart');
       }
 
-      if (!transactionId.trim()) {
-        throw new Error('Transaction ID is required');
+      // Validate all input data with Zod
+      const validationResult = checkoutSchema.safeParse(data);
+      if (!validationResult.success) {
+        const firstError = validationResult.error.errors[0];
+        throw new Error(firstError.message);
       }
+
+      const { customerInfo, paymentMethod, transactionId, notes } = validationResult.data;
 
       const total = cart.reduce((sum, item) => {
         const price = item.product?.sale_price || item.product?.price || 0;
