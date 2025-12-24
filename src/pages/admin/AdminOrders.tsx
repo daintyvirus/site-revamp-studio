@@ -33,6 +33,7 @@ import { supabase } from '@/integrations/supabase/client';
 const statusColors: Record<string, 'default' | 'secondary' | 'destructive'> = {
   pending: 'secondary',
   processing: 'default',
+  shipped: 'default',
   completed: 'default',
   cancelled: 'destructive',
 };
@@ -51,9 +52,46 @@ export default function AdminOrders() {
   const updateStatus = useUpdateOrderStatus();
   const updatePaymentStatus = useUpdatePaymentStatus();
 
+  const sendShippingNotification = async (order: Order) => {
+    if (!order.customer_email) {
+      console.log('No customer email, skipping shipping notification');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('send-shipping-notification', {
+        body: {
+          customerEmail: order.customer_email,
+          customerName: order.customer_name || 'Valued Customer',
+          orderId: order.id,
+          orderTotal: order.total,
+        },
+      });
+
+      if (error) {
+        console.error('Error sending shipping notification:', error);
+        toast.error('Failed to send shipping notification');
+      } else {
+        console.log('Shipping notification sent:', data);
+        toast.success('Shipping notification sent to customer');
+      }
+    } catch (error) {
+      console.error('Error invoking shipping notification function:', error);
+    }
+  };
+
   const handleStatusChange = async (orderId: string, status: string) => {
     try {
       await updateStatus.mutateAsync({ orderId, status });
+      
+      // Send shipping notification when status changes to shipped
+      if (status === 'shipped') {
+        const order = orders?.find(o => o.id === orderId);
+        if (order) {
+          await sendShippingNotification(order);
+        }
+      }
+      
       toast.success('Order status updated');
     } catch (error) {
       toast.error('Failed to update status');
@@ -168,6 +206,7 @@ export default function AdminOrders() {
                         <SelectContent>
                           <SelectItem value="pending">Pending</SelectItem>
                           <SelectItem value="processing">Processing</SelectItem>
+                          <SelectItem value="shipped">Shipped</SelectItem>
                           <SelectItem value="completed">Completed</SelectItem>
                           <SelectItem value="cancelled">Cancelled</SelectItem>
                         </SelectContent>
