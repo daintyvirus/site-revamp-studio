@@ -21,6 +21,9 @@ interface EmailTemplate {
   show_tracking_button: boolean;
   tracking_button_text: string | null;
   footer_text: string | null;
+  support_email: string | null;
+  company_name: string | null;
+  company_logo_url: string | null;
   is_active: boolean;
 }
 
@@ -29,6 +32,15 @@ interface ShippingNotificationRequest {
   customerName: string;
   orderId: string;
   orderTotal: number;
+}
+
+function replaceShortcodes(text: string, data: Record<string, string>): string {
+  let result = text;
+  for (const [key, value] of Object.entries(data)) {
+    const regex = new RegExp(`\\{${key}\\}`, 'gi');
+    result = result.replace(regex, value || '');
+  }
+  return result;
 }
 
 async function getEmailTemplate(supabase: any, statusType: string): Promise<EmailTemplate | null> {
@@ -46,7 +58,28 @@ async function getEmailTemplate(supabase: any, statusType: string): Promise<Emai
   return data;
 }
 
-function generateEmailHtml(template: EmailTemplate, customerName: string, orderId: string, orderTotal: number): string {
+async function logEmail(supabase: any, data: {
+  order_id: string | null;
+  template_type: string;
+  recipient_email: string;
+  subject: string;
+  status: string;
+  error_message?: string;
+}) {
+  try {
+    await supabase.from('email_logs').insert(data);
+  } catch (error) {
+    console.error('Failed to log email:', error);
+  }
+}
+
+function generateEmailHtml(template: EmailTemplate, shortcodeData: Record<string, string>): string {
+  const headerTitle = replaceShortcodes(template.header_title, shortcodeData);
+  const bodyIntro = replaceShortcodes(template.body_intro, shortcodeData);
+  const bodyContent = template.body_content ? replaceShortcodes(template.body_content, shortcodeData) : '';
+  const footerText = template.footer_text ? replaceShortcodes(template.footer_text, shortcodeData) : '';
+  const buttonText = template.tracking_button_text ? replaceShortcodes(template.tracking_button_text, shortcodeData) : 'Track Your Order';
+
   return `
     <!DOCTYPE html>
     <html>
@@ -55,57 +88,43 @@ function generateEmailHtml(template: EmailTemplate, customerName: string, orderI
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, ${template.header_color} 0%, ${template.header_color}CC 50%, ${template.header_color} 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header { background: linear-gradient(135deg, ${template.header_color} 0%, ${template.header_color}CC 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .header h1 { margin: 0; font-size: 28px; }
         .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; }
-        .order-info { background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #bbf7d0; }
-        .order-info p { margin: 8px 0; }
-        .status-badge { display: inline-block; background: ${template.header_color}; color: white; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; }
-        .tracking-box { background: #f9fafb; border: 2px dashed #d1d5db; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; }
+        .order-info { background: #EFF6FF; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #BFDBFE; }
         .footer { background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none; }
-        .footer p { margin: 5px 0; color: #6b7280; font-size: 12px; }
+        .footer p { margin: 5px 0; color: #6b7280; font-size: 12px; white-space: pre-line; }
         .cta { display: inline-block; background: linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%); color: #1a1a1a; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-          <h1>${template.header_title}</h1>
+          ${template.company_logo_url ? `<img src="${template.company_logo_url}" alt="${template.company_name}" style="max-height: 60px; margin-bottom: 15px;" />` : ''}
+          <h1>${headerTitle}</h1>
         </div>
         <div class="content">
-          <p>Dear <strong>${customerName || "Valued Customer"}</strong>,</p>
-          <p>${template.body_intro}</p>
-          ${template.body_content ? `<p>${template.body_content}</p>` : ''}
+          <p>Dear <strong>${shortcodeData.customer_name}</strong>,</p>
+          <p>${bodyIntro}</p>
+          ${bodyContent ? `<p>${bodyContent}</p>` : ''}
           
           ${template.show_order_details ? `
           <div class="order-info">
-            <p><strong>Order ID:</strong> #${orderId.slice(0, 8).toUpperCase()}</p>
-            <p><strong>Order Total:</strong> ₱${orderTotal.toLocaleString()}</p>
-            <p><strong>Status:</strong> <span class="status-badge">Shipped</span></p>
+            <p><strong>Order ID:</strong> #${shortcodeData.order_id}</p>
+            <p><strong>Total:</strong> ₱${shortcodeData.order_total}</p>
           </div>
           ` : ''}
 
           ${template.show_tracking_button ? `
           <div style="text-align: center; margin: 25px 0;">
-            <a href="https://goldenbumps.com/track-order?id=${orderId.slice(0, 8)}" class="cta">
-              📦 ${template.tracking_button_text || 'Track Your Order'}
-            </a>
+            <a href="${shortcodeData.tracking_url}" class="cta">📦 ${buttonText}</a>
           </div>
           ` : ''}
 
-          <div class="tracking-box">
-            <p style="margin: 0 0 10px 0; font-size: 16px;"><strong>🚚 What to Expect</strong></p>
-            <p style="margin: 0; color: #6b7280;">Your package is typically delivered within 3-7 business days, depending on your location.</p>
-          </div>
-
-          <p style="margin-top: 25px;">If you have any questions about your shipment, please don't hesitate to reach out to us.</p>
-          
           <p>Best regards,<br><strong>${template.sender_name}</strong></p>
         </div>
         <div class="footer">
-          <p>${template.footer_text || 'This is an automated message.'}</p>
-          <p>Please do not reply directly to this email.</p>
-          <p>For support, contact us at ${template.sender_email}</p>
+          <p>${footerText}</p>
         </div>
       </div>
     </body>
@@ -118,28 +137,43 @@ serve(async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  let customerEmail = '';
+  let subject = '';
+
   try {
-    const { customerEmail, customerName, orderId, orderTotal }: ShippingNotificationRequest = await req.json();
+    const { customerEmail: email, customerName, orderId, orderTotal }: ShippingNotificationRequest = await req.json();
+
+    customerEmail = email;
+    const orderIdShort = orderId.slice(0, 8).toUpperCase();
 
     console.log(`Sending shipping notification to ${customerEmail} for order ${orderId}`);
 
     if (!customerEmail) {
-      console.log("No customer email provided, skipping notification");
       return new Response(
         JSON.stringify({ success: false, message: "No customer email provided" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Initialize Supabase client to fetch template
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Fetch template from database
     const template = await getEmailTemplate(supabase, 'shipping');
     
-    // Use template values or fallback to defaults
+    const shortcodeData: Record<string, string> = {
+      customer_name: customerName || 'Valued Customer',
+      customer_email: customerEmail,
+      order_id: orderIdShort,
+      order_number: orderId,
+      order_total: orderTotal.toLocaleString(),
+      order_date: new Date().toLocaleDateString(),
+      company_name: template?.company_name || 'Golden Bumps',
+      support_email: template?.support_email || template?.sender_email || 'support@goldenbumps.com',
+      tracking_url: `https://goldenbumps.com/track-order?id=${orderIdShort}`,
+      shop_url: 'https://goldenbumps.com',
+    };
+
     const senderEmail = template?.sender_email || "support@goldenbumps.com";
     const senderName = template?.sender_name || "Golden Bumps";
 
@@ -147,7 +181,14 @@ serve(async (req: Request): Promise<Response> => {
     const hostingerPassword = Deno.env.get("HOSTINGER_EMAIL_PASSWORD");
 
     if (!hostingerEmail || !hostingerPassword) {
-      console.error("Hostinger email credentials not configured");
+      await logEmail(supabase, {
+        order_id: orderId,
+        template_type: 'shipping',
+        recipient_email: customerEmail,
+        subject: 'Shipping Notification',
+        status: 'failed',
+        error_message: 'Email credentials not configured',
+      });
       return new Response(
         JSON.stringify({ success: false, message: "Email credentials not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -159,46 +200,55 @@ serve(async (req: Request): Promise<Response> => {
         hostname: "smtp.hostinger.com",
         port: 465,
         tls: true,
-        auth: {
-          username: hostingerEmail,
-          password: hostingerPassword,
-        },
+        auth: { username: hostingerEmail, password: hostingerPassword },
       },
     });
 
-    // Generate email HTML from template or use default
     const emailHtml = template 
-      ? generateEmailHtml(template, customerName, orderId, orderTotal)
-      : generateDefaultEmailHtml(customerName, orderId, orderTotal);
+      ? generateEmailHtml(template, shortcodeData)
+      : generateDefaultEmailHtml(shortcodeData);
 
-    // Generate subject from template
-    const subject = template 
-      ? template.subject_template.replace('{ORDER_ID}', orderId.slice(0, 8).toUpperCase()).replace('#{ORDER_ID}', `#${orderId.slice(0, 8).toUpperCase()}`)
-      : `Your Order Has Shipped! 📦 - #${orderId.slice(0, 8).toUpperCase()} | Golden Bumps`;
+    subject = template 
+      ? replaceShortcodes(template.subject_template, { ...shortcodeData, ORDER_ID: orderIdShort })
+      : `Your Order is on the Way! - #${orderIdShort}`;
 
     await client.send({
       from: `${senderName} <${senderEmail}>`,
       to: customerEmail,
       subject: subject,
-      content: `Great news! Your order #${orderId.slice(0, 8).toUpperCase()} has been shipped and is on its way to you.`,
+      content: `Your order #${orderIdShort} has been shipped!`,
       html: emailHtml,
-      headers: {
-        "X-Priority": "1",
-        "X-Mailer": "Golden Bumps Store",
-        "Reply-To": senderEmail,
-      },
+      headers: { "X-Priority": "1", "X-Mailer": "Golden Bumps Store", "Reply-To": senderEmail },
     });
 
     await client.close();
 
+    await logEmail(supabase, {
+      order_id: orderId,
+      template_type: 'shipping',
+      recipient_email: customerEmail,
+      subject: subject,
+      status: 'sent',
+    });
+
     console.log(`Shipping notification sent successfully to ${customerEmail}`);
 
     return new Response(
-      JSON.stringify({ success: true, message: "Shipping notification sent successfully" }),
+      JSON.stringify({ success: true, message: "Notification sent successfully" }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
     console.error("Error sending shipping notification:", error);
+    
+    await logEmail(supabase, {
+      order_id: null,
+      template_type: 'shipping',
+      recipient_email: customerEmail,
+      subject: subject || 'Shipping Notification',
+      status: 'failed',
+      error_message: error.message,
+    });
+
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -206,7 +256,7 @@ serve(async (req: Request): Promise<Response> => {
   }
 });
 
-function generateDefaultEmailHtml(customerName: string, orderId: string, orderTotal: number): string {
+function generateDefaultEmailHtml(shortcodeData: Record<string, string>): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -215,44 +265,35 @@ function generateDefaultEmailHtml(customerName: string, orderId: string, orderTo
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #10B981 0%, #34D399 50%, #10B981 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
-        .header h1 { margin: 0; font-size: 28px; }
+        .header { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; }
-        .order-info { background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #bbf7d0; }
-        .order-info p { margin: 8px 0; }
-        .status-badge { display: inline-block; background: #10B981; color: white; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; }
-        .tracking-box { background: #f9fafb; border: 2px dashed #d1d5db; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; }
-        .footer { background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none; }
+        .order-info { background: #EFF6FF; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #BFDBFE; }
+        .footer { background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; }
         .footer p { margin: 5px 0; color: #6b7280; font-size: 12px; }
-        .cta { display: inline-block; background: linear-gradient(135deg, #10B981 0%, #34D399 50%, #10B981 100%); color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-          <h1>📦 Your Order Has Shipped!</h1>
+          <h1>📦 Your Order is on the Way!</h1>
         </div>
         <div class="content">
-          <p>Dear <strong>${customerName || "Valued Customer"}</strong>,</p>
-          <p>Great news! Your order is on its way to you.</p>
+          <p>Dear <strong>${shortcodeData.customer_name}</strong>,</p>
+          <p>Great news! Your order has been shipped and is on its way to you.</p>
           
           <div class="order-info">
-            <p><strong>Order ID:</strong> #${orderId.slice(0, 8).toUpperCase()}</p>
-            <p><strong>Order Total:</strong> ₱${orderTotal.toLocaleString()}</p>
-            <p><strong>Status:</strong> <span class="status-badge">Shipped</span></p>
+            <p><strong>Order ID:</strong> #${shortcodeData.order_id}</p>
+            <p><strong>Total:</strong> ₱${shortcodeData.order_total}</p>
           </div>
 
           <div style="text-align: center; margin: 25px 0;">
-            <a href="https://goldenbumps.com/track-order?id=${orderId.slice(0, 8)}" class="cta">
-              📦 Track Your Order
-            </a>
+            <a href="${shortcodeData.tracking_url}" style="display: inline-block; background: linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%); color: #1a1a1a; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">📦 Track Your Order</a>
           </div>
 
           <p>Best regards,<br><strong>Golden Bumps Team</strong></p>
         </div>
         <div class="footer">
           <p>This is an automated message from Golden Bumps.</p>
-          <p>Please do not reply directly to this email.</p>
           <p>For support, contact us at support@goldenbumps.com</p>
         </div>
       </div>
