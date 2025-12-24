@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
+import { Eye, CheckCircle, XCircle, Clock, Loader2, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAdminOrders, useUpdateOrderStatus, useUpdatePaymentStatus } from '@/hooks/useOrders';
+import { DeliveryManagementDialog } from '@/components/admin/DeliveryManagementDialog';
 import type { Order } from '@/types/database';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -48,6 +49,7 @@ const paymentStatusColors: Record<string, string> = {
 
 export default function AdminOrders() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [deliveryOrder, setDeliveryOrder] = useState<Order | null>(null);
   const [sendingNotification, setSendingNotification] = useState(false);
   const { data: orders, isLoading } = useAdminOrders();
   const updateStatus = useUpdateOrderStatus();
@@ -320,9 +322,14 @@ export default function AdminOrders() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => setSelectedOrder(order)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => setDeliveryOrder(order)} title="Manage Delivery">
+                          <Package className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setSelectedOrder(order)} title="View Details">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -457,6 +464,12 @@ export default function AdminOrders() {
           )}
         </DialogContent>
       </Dialog>
+
+      <DeliveryManagementDialog
+        order={deliveryOrder}
+        open={!!deliveryOrder}
+        onOpenChange={(open) => !open && setDeliveryOrder(null)}
+      />
     </AdminLayout>
   );
 }

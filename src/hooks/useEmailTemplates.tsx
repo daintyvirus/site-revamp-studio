@@ -29,6 +29,14 @@ export interface EmailTemplate {
   order_id_label: string;
   order_total_label: string;
   status_label: string;
+  text_color: string;
+  background_color: string;
+  button_color: string;
+  button_text_color: string;
+  footer_background_color: string;
+  refund_policy: string | null;
+  delivery_disclaimer: string | null;
+  support_hours: string | null;
   created_at: string;
   updated_at: string;
 }

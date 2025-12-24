@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Package, ShoppingBag } from 'lucide-react';
+import { Package, ShoppingBag, Gift } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -81,6 +81,14 @@ export default function Orders() {
                 <Badge className={statusColors[order.status] || statusColors.pending}>
                   {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                 </Badge>
+                {(order as any).delivery_info && (
+                  <Button asChild size="sm" className="ml-2">
+                    <Link to={`/orders/${order.id}/delivery`}>
+                      <Gift className="h-4 w-4 mr-1" />
+                      View Delivery
+                    </Link>
+                  </Button>
+                )}
               </div>
 
               <div className="border-t border-border pt-4">
