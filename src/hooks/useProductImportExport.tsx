@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-interface WooCommerceProduct {
+export interface WooCommerceProduct {
   ID: string;
   Type: string;
   SKU: string;
@@ -24,6 +24,28 @@ interface WooCommerceProduct {
   Brands: string;
 }
 
+export interface ParsedProduct {
+  name: string;
+  type: 'simple' | 'variable' | 'variation';
+  sku: string;
+  priceBdt: number;
+  salePriceBdt: number | null;
+  category: string;
+  image: string;
+  stock: number;
+  isFeatured: boolean;
+  isActive: boolean;
+  variantCount?: number;
+  parentId?: string;
+}
+
+export interface ImportProgress {
+  current: number;
+  total: number;
+  currentProduct: string;
+  status: 'pending' | 'importing' | 'success' | 'error';
+}
+
 interface ImportResult {
   success: number;
   failed: number;
@@ -34,12 +56,12 @@ export function useProductImportExport() {
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
+  const [currentImportItem, setCurrentImportItem] = useState<ImportProgress | null>(null);
 
   const parseCSV = (csvText: string): WooCommerceProduct[] => {
     const lines = csvText.split('\n');
     if (lines.length < 2) return [];
 
-    // Handle BOM and clean up header
     const headerLine = lines[0].replace(/^\uFEFF/, '');
     const headers = parseCSVLine(headerLine);
     
@@ -99,14 +121,60 @@ export function useProductImportExport() {
     return html.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ');
   };
 
+  // Preview parsed products without importing
+  const previewCSV = useCallback(async (file: File): Promise<ParsedProduct[]> => {
+    const text = await file.text();
+    const wcProducts = parseCSV(text);
+    
+    const parentProducts = wcProducts.filter(p => p.Type === 'variable');
+    const simpleProducts = wcProducts.filter(p => p.Type === 'simple' || p.Type === '');
+    const variations = wcProducts.filter(p => p.Type?.includes('variation'));
+    
+    const parsed: ParsedProduct[] = [];
+    
+    // Parse simple products
+    for (const p of simpleProducts) {
+      parsed.push({
+        name: p.Name,
+        type: 'simple',
+        sku: p.SKU || '',
+        priceBdt: parseFloat(p['Regular price']) || 0,
+        salePriceBdt: parseFloat(p['Sale price']) || null,
+        category: p.Categories?.split('>').pop()?.trim() || '',
+        image: p.Images?.split(',')[0]?.trim() || '',
+        stock: parseInt(p.Stock) || 0,
+        isFeatured: p['Is featured?'] === '1',
+        isActive: p.Published === '1',
+      });
+    }
+    
+    // Parse variable products with variant count
+    for (const p of parentProducts) {
+      const productVariations = variations.filter(v => v.Parent === `id:${p.ID}`);
+      parsed.push({
+        name: p.Name,
+        type: 'variable',
+        sku: p.SKU || '',
+        priceBdt: productVariations[0] ? parseFloat(productVariations[0]['Regular price']) || 0 : 0,
+        salePriceBdt: null,
+        category: p.Categories?.split('>').pop()?.trim() || '',
+        image: p.Images?.split(',')[0]?.trim() || '',
+        stock: 0,
+        isFeatured: p['Is featured?'] === '1',
+        isActive: p.Published === '1',
+        variantCount: productVariations.length,
+      });
+    }
+    
+    return parsed;
+  }, []);
+
   const getCategoryFromPath = async (categoryPath: string): Promise<string | null> => {
     if (!categoryPath) return null;
     
-    // Extract the deepest category from path like "Gift Cards > Steam Gift Card"
     const parts = categoryPath.split('>').map(p => p.trim());
     const categoryName = parts[parts.length - 1] || parts[0];
     
-    // Check if category exists
     const { data: existingCategory } = await supabase
       .from('categories')
       .select('id')
@@ -115,7 +183,6 @@ export function useProductImportExport() {
     
     if (existingCategory) return existingCategory.id;
     
-    // Create new category
     const { data: newCategory } = await supabase
       .from('categories')
       .insert({
@@ -151,7 +218,10 @@ export function useProductImportExport() {
     return newBrand?.id || null;
   };
 
-  const importProducts = async (file: File): Promise<ImportResult> => {
+  const importProducts = async (
+    file: File,
+    onProgress?: (progress: ImportProgress) => void
+  ): Promise<ImportResult> => {
     setIsImporting(true);
     setImportProgress(0);
     
@@ -165,7 +235,6 @@ export function useProductImportExport() {
         throw new Error('No products found in CSV');
       }
 
-      // Group variable products and their variations
       const parentProducts = wcProducts.filter(p => p.Type === 'variable');
       const simpleProducts = wcProducts.filter(p => p.Type === 'simple' || p.Type === '');
       const variations = wcProducts.filter(p => p.Type?.includes('variation'));
@@ -175,6 +244,15 @@ export function useProductImportExport() {
 
       // Import simple products
       for (const wcProduct of simpleProducts) {
+        const progress: ImportProgress = {
+          current: processed + 1,
+          total,
+          currentProduct: wcProduct.Name,
+          status: 'importing'
+        };
+        setCurrentImportItem(progress);
+        onProgress?.(progress);
+
         try {
           const categoryId = await getCategoryFromPath(wcProduct.Categories);
           const brandId = await getBrandId(wcProduct.Brands);
@@ -189,7 +267,7 @@ export function useProductImportExport() {
             description: stripHtml(wcProduct.Description || ''),
             short_description: stripHtml(wcProduct['Short description'] || ''),
             price_bdt: priceBdt,
-            price: priceBdt / 125, // Convert BDT to USD (approximate rate)
+            price: priceBdt / 125,
             sale_price_bdt: salePriceBdt,
             sale_price: salePriceBdt ? salePriceBdt / 125 : null,
             image_url: wcProduct.Images?.split(',')[0]?.trim() || null,
@@ -205,9 +283,12 @@ export function useProductImportExport() {
 
           await supabase.from('products').insert(productData);
           result.success++;
+          
+          onProgress?.({ ...progress, status: 'success' });
         } catch (error: any) {
           result.failed++;
           result.errors.push(`Failed to import "${wcProduct.Name}": ${error.message}`);
+          onProgress?.({ ...progress, status: 'error' });
         }
         
         processed++;
@@ -216,12 +297,19 @@ export function useProductImportExport() {
 
       // Import variable products with variations
       for (const wcProduct of parentProducts) {
+        const progress: ImportProgress = {
+          current: processed + 1,
+          total,
+          currentProduct: wcProduct.Name,
+          status: 'importing'
+        };
+        setCurrentImportItem(progress);
+        onProgress?.(progress);
+
         try {
           const categoryId = await getCategoryFromPath(wcProduct.Categories);
           const brandId = await getBrandId(wcProduct.Brands);
           
-          // Variable products don't have regular price themselves
-          // Get price from first variation
           const productVariations = variations.filter(v => v.Parent === `id:${wcProduct.ID}`);
           const firstVariation = productVariations[0];
           const basePriceBdt = firstVariation ? parseFloat(firstVariation['Regular price']) || 0 : 0;
@@ -239,7 +327,7 @@ export function useProductImportExport() {
             image_url: wcProduct.Images?.split(',')[0]?.trim() || null,
             category_id: categoryId,
             brand_id: brandId,
-            stock: 0, // Stock managed via variants
+            stock: 0,
             is_featured: wcProduct['Is featured?'] === '1',
             is_active: wcProduct.Published === '1',
             product_type: 'variable',
@@ -255,12 +343,9 @@ export function useProductImportExport() {
 
           if (productError) throw productError;
 
-          // Import variations for this product
           for (const variation of productVariations) {
             const variantPriceBdt = parseFloat(variation['Regular price']) || 0;
             const variantSalePriceBdt = parseFloat(variation['Sale price']) || null;
-            
-            // Extract variant name from attribute
             const attrValue = variation['Attribute 1 value(s)'] || variation.Name.split(' - ').pop() || 'Default';
             
             const variantData = {
@@ -279,9 +364,11 @@ export function useProductImportExport() {
           }
 
           result.success++;
+          onProgress?.({ ...progress, status: 'success' });
         } catch (error: any) {
           result.failed++;
           result.errors.push(`Failed to import "${wcProduct.Name}": ${error.message}`);
+          onProgress?.({ ...progress, status: 'error' });
         }
         
         processed++;
@@ -293,6 +380,7 @@ export function useProductImportExport() {
     } finally {
       setIsImporting(false);
       setImportProgress(100);
+      setCurrentImportItem(null);
     }
     
     return result;
@@ -302,7 +390,6 @@ export function useProductImportExport() {
     setIsExporting(true);
     
     try {
-      // Fetch all products with variants and category info
       const { data: products, error } = await supabase
         .from('products')
         .select(`
@@ -315,7 +402,6 @@ export function useProductImportExport() {
 
       if (error) throw error;
 
-      // CSV Headers matching WooCommerce format
       const headers = [
         'ID', 'Type', 'SKU', 'Name', 'Published', 'Is featured?',
         'Short description', 'Description', 'Regular price', 'Sale price',
@@ -330,7 +416,6 @@ export function useProductImportExport() {
         const hasVariants = product.variants && product.variants.length > 0;
         const productType = hasVariants ? 'variable' : 'simple';
 
-        // Main product row
         rows.push([
           product.wc_id?.toString() || product.id,
           productType,
@@ -355,7 +440,6 @@ export function useProductImportExport() {
           product.sale_price_bdt?.toString() || '',
         ]);
 
-        // Add variation rows
         if (hasVariants) {
           for (const variant of product.variants) {
             rows.push([
@@ -385,7 +469,6 @@ export function useProductImportExport() {
         }
       }
 
-      // Convert to CSV
       const csv = rows.map(row => 
         row.map(cell => {
           const str = String(cell || '');
@@ -420,12 +503,67 @@ export function useProductImportExport() {
     }
   };
 
+  const downloadTemplate = () => {
+    const headers = [
+      'ID', 'Type', 'SKU', 'Name', 'Published', 'Is featured?',
+      'Short description', 'Description', 'Regular price', 'Sale price',
+      'Categories', 'Tags', 'Images', 'Stock', 'In stock?', 'Parent',
+      'Attribute 1 name', 'Attribute 1 value(s)', 'Brands'
+    ];
+
+    // Sample data rows
+    const sampleRows = [
+      ['1', 'simple', 'PROD-001', 'Sample Simple Product', '1', '0', 
+       'Short description here', 'Full product description', '500', '450',
+       'Electronics', 'tag1, tag2', 'https://example.com/image.jpg', '100', '1', '',
+       '', '', 'Brand Name'],
+      ['2', 'variable', 'PROD-002', 'Sample Variable Product', '1', '1',
+       'Variable product description', 'Full description', '', '',
+       'Gift Cards', 'digital, gift', 'https://example.com/image2.jpg', '', '1', '',
+       'Select Amount', '100 BDT, 200 BDT, 500 BDT', ''],
+      ['3', 'variation', '', 'Sample Variable Product - 100 BDT', '1', '0',
+       '', '', '100', '', '', '', '', '50', '1', 'id:2',
+       'Select Amount', '100 BDT', ''],
+      ['4', 'variation', '', 'Sample Variable Product - 200 BDT', '1', '0',
+       '', '', '200', '', '', '', '', '30', '1', 'id:2',
+       'Select Amount', '200 BDT', ''],
+      ['5', 'variation', '', 'Sample Variable Product - 500 BDT', '1', '0',
+       '', '', '500', '', '', '', '', '20', '1', 'id:2',
+       'Select Amount', '500 BDT', ''],
+    ];
+
+    const rows = [headers, ...sampleRows];
+    const csv = rows.map(row => 
+      row.map(cell => {
+        const str = String(cell || '');
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      }).join(',')
+    ).join('\n');
+
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'woocommerce-import-template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('Template downloaded');
+  };
+
   return {
     importProducts,
     exportProducts,
     downloadCSV,
+    downloadTemplate,
+    previewCSV,
     isImporting,
     isExporting,
     importProgress,
+    currentImportItem,
   };
 }
