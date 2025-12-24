@@ -30,7 +30,9 @@ const productSchema = z.object({
   description: z.string().optional(),
   short_description: z.string().optional(),
   price: z.coerce.number().min(0, 'Price must be positive'),
+  price_bdt: z.coerce.number().min(0, 'BDT Price must be positive'),
   sale_price: z.coerce.number().min(0).optional().nullable(),
+  sale_price_bdt: z.coerce.number().min(0).optional().nullable(),
   image_url: z.string().url().optional().or(z.literal('')),
   category_id: z.string().optional().nullable(),
   brand_id: z.string().optional().nullable(),
@@ -64,7 +66,9 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
       description: product?.description ?? '',
       short_description: product?.short_description ?? '',
       price: product?.price ?? 0,
+      price_bdt: product?.price_bdt ?? 0,
       sale_price: product?.sale_price ?? null,
+      sale_price_bdt: product?.sale_price_bdt ?? null,
       image_url: product?.image_url ?? '',
       category_id: product?.category_id ?? null,
       brand_id: product?.brand_id ?? null,
@@ -139,12 +143,14 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
         name: data.name,
         slug: data.slug,
         price: data.price,
+        price_bdt: data.price_bdt,
         description: data.description,
         short_description: data.short_description,
         stock: data.stock,
         is_featured: data.is_featured,
         is_active: data.is_active,
         sale_price: data.sale_price || null,
+        sale_price_bdt: data.sale_price_bdt || null,
         image_url: data.image_url || null,
         category_id: data.category_id || null,
         brand_id: data.brand_id || null,
@@ -203,18 +209,52 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
         <Textarea id="description" rows={4} {...register('description')} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="price">Regular Price *</Label>
-          <Input id="price" type="number" step="0.01" {...register('price')} />
-          {errors.price && <p className="text-sm text-destructive mt-1">{errors.price.message}</p>}
-        </div>
+      {/* Pricing Section */}
+      <Card className="border-primary/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            💰 Pricing
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Set prices in both BDT and USD for each product
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="price_bdt" className="flex items-center gap-1">
+                <span className="text-lg">৳</span> BDT Price *
+              </Label>
+              <Input id="price_bdt" type="number" step="1" {...register('price_bdt')} />
+              {errors.price_bdt && <p className="text-sm text-destructive mt-1">{errors.price_bdt.message}</p>}
+            </div>
 
-        <div>
-          <Label htmlFor="sale_price">Sale Price</Label>
-          <Input id="sale_price" type="number" step="0.01" {...register('sale_price')} />
-        </div>
-      </div>
+            <div>
+              <Label htmlFor="price" className="flex items-center gap-1">
+                <span className="text-lg">$</span> USD Price *
+              </Label>
+              <Input id="price" type="number" step="0.01" {...register('price')} />
+              {errors.price && <p className="text-sm text-destructive mt-1">{errors.price.message}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="sale_price_bdt" className="flex items-center gap-1">
+                <span className="text-lg">৳</span> Sale Price (BDT)
+              </Label>
+              <Input id="sale_price_bdt" type="number" step="1" {...register('sale_price_bdt')} />
+            </div>
+
+            <div>
+              <Label htmlFor="sale_price" className="flex items-center gap-1">
+                <span className="text-lg">$</span> Sale Price (USD)
+              </Label>
+              <Input id="sale_price" type="number" step="0.01" {...register('sale_price')} />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Flash Sale Section */}
       <Card className="border-dashed border-primary/50">

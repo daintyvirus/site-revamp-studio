@@ -624,8 +624,10 @@ export type Database = {
           id: string
           name: string
           price: number
+          price_bdt: number | null
           product_id: string
           sale_price: number | null
+          sale_price_bdt: number | null
           stock: number
         }
         Insert: {
@@ -633,8 +635,10 @@ export type Database = {
           id?: string
           name: string
           price: number
+          price_bdt?: number | null
           product_id: string
           sale_price?: number | null
+          sale_price_bdt?: number | null
           stock?: number
         }
         Update: {
@@ -642,8 +646,10 @@ export type Database = {
           id?: string
           name?: string
           price?: number
+          price_bdt?: number | null
           product_id?: string
           sale_price?: number | null
+          sale_price_bdt?: number | null
           stock?: number
         }
         Relationships: [
@@ -669,8 +675,10 @@ export type Database = {
           is_featured: boolean
           name: string
           price: number
+          price_bdt: number | null
           sale_end_date: string | null
           sale_price: number | null
+          sale_price_bdt: number | null
           sale_start_date: string | null
           short_description: string | null
           slug: string
@@ -689,8 +697,10 @@ export type Database = {
           is_featured?: boolean
           name: string
           price: number
+          price_bdt?: number | null
           sale_end_date?: string | null
           sale_price?: number | null
+          sale_price_bdt?: number | null
           sale_start_date?: string | null
           short_description?: string | null
           slug: string
@@ -709,8 +719,10 @@ export type Database = {
           is_featured?: boolean
           name?: string
           price?: number
+          price_bdt?: number | null
           sale_end_date?: string | null
           sale_price?: number | null
+          sale_price_bdt?: number | null
           sale_start_date?: string | null
           short_description?: string | null
           slug?: string

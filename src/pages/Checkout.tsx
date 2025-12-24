@@ -20,7 +20,7 @@ export default function Checkout() {
   const { user } = useAuth();
   const { data: cart, isLoading } = useCart();
   const { data: paymentMethods, isLoading: methodsLoading } = useActivePaymentMethods();
-  const { currency, formatPrice, convertPrice } = useCurrency();
+  const { currency, formatPrice } = useCurrency();
   const checkout = useCheckout();
   const navigate = useNavigate();
   
@@ -40,12 +40,17 @@ export default function Checkout() {
     });
   }, [paymentMethods, currency]);
 
-  const total = cart?.reduce((sum, item) => {
-    const price = item.product?.sale_price || item.product?.price || 0;
-    return sum + price * item.quantity;
+  // Calculate total in BDT (base currency)
+  const totalBDT = cart?.reduce((sum, item) => {
+    const priceBDT = item.product?.price_bdt || (item.product?.price || 0) * 110;
+    return sum + priceBDT * item.quantity;
   }, 0) ?? 0;
 
-  const displayTotal = convertPrice(total);
+  // Calculate total in USD
+  const totalUSD = cart?.reduce((sum, item) => {
+    const priceUSD = item.product?.sale_price || item.product?.price || 0;
+    return sum + priceUSD * item.quantity;
+  }, 0) ?? 0;
 
   if (!user) {
     return (
@@ -152,7 +157,7 @@ export default function Checkout() {
                       <span className="text-sm text-muted-foreground">
                         {cart.length} item{cart.length > 1 ? 's' : ''} • {customerInfo.name}
                       </span>
-                      <span className="font-bold text-primary">{formatPrice(total)}</span>
+                      <span className="font-bold text-primary">{formatPrice(totalBDT, totalUSD)}</span>
                     </div>
                   </div>
                 )}
@@ -198,7 +203,7 @@ export default function Checkout() {
                         disabled={!canProceedFromMethod}
                         className="flex-1 bg-blue-600 hover:bg-blue-700"
                       >
-                        Pay {formatPrice(total)}
+                        Pay {formatPrice(totalBDT, totalUSD)}
                       </Button>
                     </div>
                   </div>
@@ -214,7 +219,7 @@ export default function Checkout() {
                     
                     <PaymentInstructions
                       method={selectedMethod}
-                      amount={displayTotal}
+                      amount={currency === 'BDT' ? totalBDT : totalUSD}
                       transactionId={transactionId}
                       onTransactionIdChange={setTransactionId}
                       storeName={STORE_NAME}

@@ -4,16 +4,24 @@ import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useCart, useUpdateCartItem, useRemoveFromCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
+import { useCurrency } from '@/hooks/useCurrency';
 
 export default function Cart() {
   const { user } = useAuth();
+  const { formatPrice } = useCurrency();
   const { data: cart, isLoading } = useCart();
   const updateItem = useUpdateCartItem();
   const removeItem = useRemoveFromCart();
 
-  const total = cart?.reduce((sum, item) => {
-    const price = item.product?.sale_price || item.product?.price || 0;
-    return sum + price * item.quantity;
+  // Calculate totals in both currencies
+  const totalBDT = cart?.reduce((sum, item) => {
+    const priceBDT = item.product?.sale_price_bdt || item.product?.price_bdt || 0;
+    return sum + priceBDT * item.quantity;
+  }, 0) ?? 0;
+
+  const totalUSD = cart?.reduce((sum, item) => {
+    const priceUSD = item.product?.sale_price || item.product?.price || 0;
+    return sum + priceUSD * item.quantity;
   }, 0) ?? 0;
 
   if (!user) {
@@ -72,7 +80,7 @@ export default function Cart() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold">{item.product?.name}</h3>
-                  <p className="text-primary font-bold">${(item.product?.sale_price || item.product?.price)?.toFixed(2)}</p>
+                  <p className="text-primary font-bold">{formatPrice(item.product?.sale_price_bdt || item.product?.price_bdt || 0, item.product?.sale_price || item.product?.price)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -111,13 +119,13 @@ export default function Cart() {
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>{formatPrice(totalBDT, totalUSD)}</span>
                 </div>
               </div>
               <div className="border-t border-border pt-4 mb-6">
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span className="text-primary">${total.toFixed(2)}</span>
+                  <span className="text-primary">{formatPrice(totalBDT, totalUSD)}</span>
                 </div>
               </div>
               <Button asChild className="w-full glow-purple" size="lg">

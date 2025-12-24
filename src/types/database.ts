@@ -23,7 +23,9 @@ export interface Product {
   description: string | null;
   short_description: string | null;
   price: number;
+  price_bdt: number;
   sale_price: number | null;
+  sale_price_bdt: number | null;
   image_url: string | null;
   category_id: string | null;
   brand_id: string | null;
@@ -45,7 +47,9 @@ export interface ProductVariant {
   product_id: string;
   name: string;
   price: number;
+  price_bdt: number;
   sale_price: number | null;
+  sale_price_bdt: number | null;
   stock: number;
   created_at: string;
 }
