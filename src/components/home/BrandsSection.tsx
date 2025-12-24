@@ -1,9 +1,17 @@
 import { useBrands } from '@/hooks/useProducts';
+import { useHomepageSection } from '@/hooks/useHomepageSections';
 import { Link } from 'react-router-dom';
 
 export default function BrandsSection() {
   const { data: brands } = useBrands();
+  const { data: section } = useHomepageSection('brands');
+  
+  // Get content from database or use defaults
+  const title = section?.title || 'Trusted Brands';
+  const description = section?.description || 'Official digital products from top gaming brands worldwide';
 
+  // Don't render if section is hidden or no brands
+  if (section && !section.is_visible) return null;
   if (!brands?.length) return null;
 
   return (
@@ -11,10 +19,10 @@ export default function BrandsSection() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
-            Trusted Brands
+            {title}
           </h2>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Official digital products from top gaming brands worldwide
+            {description}
           </p>
         </div>
 

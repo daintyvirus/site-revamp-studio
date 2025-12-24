@@ -3,9 +3,19 @@ import { ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProductGrid from '@/components/products/ProductGrid';
 import { useProducts } from '@/hooks/useProducts';
+import { useHomepageSection } from '@/hooks/useHomepageSections';
 
 export default function FeaturedProducts() {
   const { data: products, isLoading } = useProducts({ featured: true });
+  const { data: section } = useHomepageSection('featured');
+  
+  // Get content from database or use defaults
+  const badgeText = section?.badge_text || 'Curated Selection';
+  const title = section?.title || 'Featured Products';
+  const description = section?.description || 'Top picks handpicked for gamers like you';
+
+  // Don't render if section is hidden
+  if (section && !section.is_visible) return null;
 
   return (
     <section className="py-16 md:py-24 bg-card/50 relative overflow-hidden">
@@ -19,13 +29,13 @@ export default function FeaturedProducts() {
           <div className="animate-slide-up">
             <div className="inline-flex items-center gap-2 text-primary mb-2">
               <Sparkles className="h-5 w-5" />
-              <span className="text-sm font-medium uppercase tracking-wider">Curated Selection</span>
+              <span className="text-sm font-medium uppercase tracking-wider">{badgeText}</span>
             </div>
             <h2 className="font-display text-3xl md:text-4xl font-bold mb-2">
-              Featured Products
+              {title}
             </h2>
             <p className="text-muted-foreground">
-              Top picks handpicked for gamers like you
+              {description}
             </p>
           </div>
           <Button asChild variant="outline" className="animate-slide-up hover:border-primary hover:text-primary transition-all duration-300 group" style={{ animationDelay: '0.1s' }}>

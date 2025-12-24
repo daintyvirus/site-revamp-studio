@@ -26,6 +26,8 @@ import AdminEmailTemplates from "./pages/admin/AdminEmailTemplates";
 import AdminHeroImages from "./pages/admin/AdminHeroImages";
 import AdminSiteSettings from "./pages/admin/AdminSiteSettings";
 import AdminBrands from "./pages/admin/AdminBrands";
+import AdminNavigationMenu from "./pages/admin/AdminNavigationMenu";
+import AdminHomepageSections from "./pages/admin/AdminHomepageSections";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -84,6 +86,8 @@ function AnimatedRoutes() {
           <Route path="/admin/email-templates" element={<AdminEmailTemplates />} />
           <Route path="/admin/hero-images" element={<AdminHeroImages />} />
           <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
+          <Route path="/admin/navigation-menu" element={<AdminNavigationMenu />} />
+          <Route path="/admin/homepage-sections" element={<AdminHomepageSections />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </motion.div>

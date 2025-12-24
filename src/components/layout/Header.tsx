@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useNavigationMenu } from '@/hooks/useNavigationMenu';
 import { cn } from '@/lib/utils';
 
 export default function Header() {
@@ -24,6 +25,7 @@ export default function Header() {
   const { data: cart } = useCart();
   const { data: wishlist } = useWishlist();
   const { data: settings } = useSiteSettings();
+  const { data: headerNavItems } = useNavigationMenu('header');
 
   const cartCount = cart?.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
   const wishlistCount = wishlist?.length ?? 0;
@@ -76,17 +78,19 @@ export default function Header() {
             </div>
           </form>
 
-          {/* Navigation - Desktop */}
+          {/* Navigation - Desktop (Dynamic) */}
           <nav className="hidden lg:flex items-center gap-6">
-            <Link to="/shop" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Shop
-            </Link>
-            <Link to="/shop?category=gift-cards" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Gift Cards
-            </Link>
-            <Link to="/shop?category=top-ups" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Top-Ups
-            </Link>
+            {headerNavItems?.map((item) => (
+              <Link
+                key={item.id}
+                to={item.url}
+                target={item.open_in_new_tab ? '_blank' : undefined}
+                rel={item.open_in_new_tab ? 'noopener noreferrer' : undefined}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {item.title}
+              </Link>
+            ))}
           </nav>
 
           {/* Actions */}
@@ -197,29 +201,20 @@ export default function Header() {
             </div>
           </form>
 
-          {/* Mobile Nav */}
+          {/* Mobile Nav (Dynamic) */}
           <nav className="flex flex-col gap-2">
-            <Link
-              to="/shop"
-              className="px-4 py-2 rounded-lg hover:bg-muted transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Shop All
-            </Link>
-            <Link
-              to="/shop?category=gift-cards"
-              className="px-4 py-2 rounded-lg hover:bg-muted transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Gift Cards
-            </Link>
-            <Link
-              to="/shop?category=top-ups"
-              className="px-4 py-2 rounded-lg hover:bg-muted transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Top-Ups
-            </Link>
+            {headerNavItems?.map((item) => (
+              <Link
+                key={item.id}
+                to={item.url}
+                target={item.open_in_new_tab ? '_blank' : undefined}
+                rel={item.open_in_new_tab ? 'noopener noreferrer' : undefined}
+                className="px-4 py-2 rounded-lg hover:bg-muted transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {item.title}
+              </Link>
+            ))}
           </nav>
         </div>
       </div>
