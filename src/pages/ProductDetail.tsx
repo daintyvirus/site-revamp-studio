@@ -12,6 +12,9 @@ import { useToggleWishlist, useIsInWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
 import VariantSelector from '@/components/products/VariantSelector';
+import ProductReviews from '@/components/products/ProductReviews';
+import StarRating from '@/components/products/StarRating';
+import { useProductReviewStats } from '@/hooks/useProductReviews';
 import { cn } from '@/lib/utils';
 
 interface CountdownTimerProps {
@@ -95,6 +98,7 @@ function CountdownTimer({ endDate }: CountdownTimerProps) {
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: product, isLoading, error } = useProduct(slug || '');
+  const { data: reviewStats } = useProductReviewStats(product?.id || '');
   const { user } = useAuth();
   const { formatPrice, currency } = useCurrency();
   const addToCart = useAddToCart();
@@ -289,9 +293,19 @@ export default function ProductDetail() {
             </div>
 
             {/* Name */}
-            <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
+            <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-2">
               {product.name}
             </h1>
+
+            {/* Rating Summary */}
+            {reviewStats && reviewStats.count > 0 && (
+              <div className="flex items-center gap-2 mb-4">
+                <StarRating rating={reviewStats.average} size="sm" />
+                <span className="text-sm text-muted-foreground">
+                  {reviewStats.average.toFixed(1)} ({reviewStats.count} review{reviewStats.count !== 1 ? 's' : ''})
+                </span>
+              </div>
+            )}
 
             {/* Flash Sale Countdown */}
             {isFlashSaleActive && saleEndDate && (
@@ -436,6 +450,11 @@ export default function ProductDetail() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="mt-16 pt-8 border-t">
+          <ProductReviews productId={product.id} productName={product.name} />
         </div>
       </div>
     </Layout>
