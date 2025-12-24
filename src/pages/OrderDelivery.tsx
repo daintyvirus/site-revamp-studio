@@ -275,7 +275,7 @@ export default function OrderDelivery() {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
-              {order.delivery_type === 'account' ? 'Account Details' : 'Your Code'}
+              Your {order.delivery_type || 'Code'}
             </CardTitle>
             <CardDescription>
               Click to reveal your secure delivery
@@ -289,7 +289,7 @@ export default function OrderDelivery() {
                 variant="outline"
               >
                 <Eye className="h-5 w-5 mr-2" />
-                Click to Reveal
+                Reveal Your {order.delivery_type || 'Code'}
               </Button>
             ) : (
               <div className="space-y-4">
