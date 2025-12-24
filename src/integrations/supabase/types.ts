@@ -659,13 +659,16 @@ export type Database = {
           category_id: string | null
           created_at: string
           description: string | null
+          flash_sale_enabled: boolean
           id: string
           image_url: string | null
           is_active: boolean
           is_featured: boolean
           name: string
           price: number
+          sale_end_date: string | null
           sale_price: number | null
+          sale_start_date: string | null
           short_description: string | null
           slug: string
           stock: number
@@ -676,13 +679,16 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           description?: string | null
+          flash_sale_enabled?: boolean
           id?: string
           image_url?: string | null
           is_active?: boolean
           is_featured?: boolean
           name: string
           price: number
+          sale_end_date?: string | null
           sale_price?: number | null
+          sale_start_date?: string | null
           short_description?: string | null
           slug: string
           stock?: number
@@ -693,13 +699,16 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           description?: string | null
+          flash_sale_enabled?: boolean
           id?: string
           image_url?: string | null
           is_active?: boolean
           is_featured?: boolean
           name?: string
           price?: number
+          sale_end_date?: string | null
           sale_price?: number | null
+          sale_start_date?: string | null
           short_description?: string | null
           slug?: string
           stock?: number

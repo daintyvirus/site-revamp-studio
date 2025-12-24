@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -17,6 +18,7 @@ import {
 import { useCategories, useBrands, useCreateProduct, useUpdateProduct } from '@/hooks/useProducts';
 import type { Product } from '@/types/database';
 import { toast } from 'sonner';
+import { Clock, Zap } from 'lucide-react';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -31,6 +33,9 @@ const productSchema = z.object({
   stock: z.coerce.number().int().min(0),
   is_featured: z.boolean(),
   is_active: z.boolean(),
+  flash_sale_enabled: z.boolean(),
+  sale_start_date: z.string().optional().nullable(),
+  sale_end_date: z.string().optional().nullable(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -62,8 +67,13 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
       stock: product?.stock ?? 0,
       is_featured: product?.is_featured ?? false,
       is_active: product?.is_active ?? true,
+      flash_sale_enabled: product?.flash_sale_enabled ?? false,
+      sale_start_date: product?.sale_start_date ? product.sale_start_date.slice(0, 16) : '',
+      sale_end_date: product?.sale_end_date ? product.sale_end_date.slice(0, 16) : '',
     },
   });
+
+  const flashSaleEnabled = watch('flash_sale_enabled');
 
   const generateSlug = (name: string) => {
     return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -85,6 +95,9 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
         image_url: data.image_url || null,
         category_id: data.category_id || null,
         brand_id: data.brand_id || null,
+        flash_sale_enabled: data.flash_sale_enabled,
+        sale_start_date: data.sale_start_date ? new Date(data.sale_start_date).toISOString() : null,
+        sale_end_date: data.sale_end_date ? new Date(data.sale_end_date).toISOString() : null,
       };
 
       if (product) {
@@ -139,7 +152,7 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="price">Price *</Label>
+          <Label htmlFor="price">Regular Price *</Label>
           <Input id="price" type="number" step="0.01" {...register('price')} />
           {errors.price && <p className="text-sm text-destructive mt-1">{errors.price.message}</p>}
         </div>
@@ -149,6 +162,55 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
           <Input id="sale_price" type="number" step="0.01" {...register('sale_price')} />
         </div>
       </div>
+
+      {/* Flash Sale Section */}
+      <Card className="border-dashed border-primary/50">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-primary" />
+              <CardTitle className="text-base">Flash Sale / Countdown Timer</CardTitle>
+            </div>
+            <Switch
+              checked={watch('flash_sale_enabled')}
+              onCheckedChange={(checked) => setValue('flash_sale_enabled', checked)}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Enable to show a countdown timer with the sale price on this product
+          </p>
+        </CardHeader>
+        {flashSaleEnabled && (
+          <CardContent className="space-y-4 pt-0">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Sale Start Date
+                </Label>
+                <Input
+                  type="datetime-local"
+                  {...register('sale_start_date')}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Sale End Date *
+                </Label>
+                <Input
+                  type="datetime-local"
+                  {...register('sale_end_date')}
+                  required={flashSaleEnabled}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              The countdown timer will show time remaining until the sale ends. Make sure to set a sale price above.
+            </p>
+          </CardContent>
+        )}
+      </Card>
 
       <div>
         <Label htmlFor="image_url">Image URL</Label>

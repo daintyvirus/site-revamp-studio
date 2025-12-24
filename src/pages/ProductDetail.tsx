@@ -1,6 +1,7 @@
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, Heart, ShoppingCart, Zap, Package, Truck } from 'lucide-react';
+import { ArrowLeft, Heart, ShoppingCart, Zap, Package, Truck, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -11,6 +12,84 @@ import { useToggleWishlist, useIsInWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
+interface CountdownTimerProps {
+  endDate: string;
+}
+
+function CountdownTimer({ endDate }: CountdownTimerProps) {
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const difference = new Date(endDate).getTime() - new Date().getTime();
+      
+      if (difference <= 0) {
+        setIsExpired(true);
+        return;
+      }
+
+      setTimeLeft({
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
+      });
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(timer);
+  }, [endDate]);
+
+  if (isExpired) return null;
+
+  return (
+    <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-destructive/10 to-orange-500/10 border border-destructive/30 mb-6">
+      <div className="flex items-center gap-2">
+        <Zap className="h-5 w-5 text-destructive animate-pulse" />
+        <span className="font-semibold text-destructive">Flash Sale ends in:</span>
+      </div>
+      <div className="flex items-center gap-2">
+        {timeLeft.days > 0 && (
+          <div className="flex flex-col items-center">
+            <span className="bg-destructive text-destructive-foreground px-3 py-1.5 rounded-lg font-bold text-lg font-mono">
+              {String(timeLeft.days).padStart(2, '0')}
+            </span>
+            <span className="text-xs text-muted-foreground mt-1">Days</span>
+          </div>
+        )}
+        <div className="flex flex-col items-center">
+          <span className="bg-destructive text-destructive-foreground px-3 py-1.5 rounded-lg font-bold text-lg font-mono">
+            {String(timeLeft.hours).padStart(2, '0')}
+          </span>
+          <span className="text-xs text-muted-foreground mt-1">Hours</span>
+        </div>
+        <span className="text-destructive font-bold text-xl">:</span>
+        <div className="flex flex-col items-center">
+          <span className="bg-destructive text-destructive-foreground px-3 py-1.5 rounded-lg font-bold text-lg font-mono">
+            {String(timeLeft.minutes).padStart(2, '0')}
+          </span>
+          <span className="text-xs text-muted-foreground mt-1">Mins</span>
+        </div>
+        <span className="text-destructive font-bold text-xl">:</span>
+        <div className="flex flex-col items-center">
+          <span className="bg-destructive text-destructive-foreground px-3 py-1.5 rounded-lg font-bold text-lg font-mono animate-pulse">
+            {String(timeLeft.seconds).padStart(2, '0')}
+          </span>
+          <span className="text-xs text-muted-foreground mt-1">Secs</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: product, isLoading, error } = useProduct(slug || '');
@@ -18,6 +97,17 @@ export default function ProductDetail() {
   const addToCart = useAddToCart();
   const toggleWishlist = useToggleWishlist();
   const isInWishlist = useIsInWishlist(product?.id || '');
+
+  // Check if flash sale is active
+  const now = new Date();
+  const saleStartDate = product?.sale_start_date ? new Date(product.sale_start_date) : null;
+  const saleEndDate = product?.sale_end_date ? new Date(product.sale_end_date) : null;
+  
+  const isFlashSaleActive = product?.flash_sale_enabled && 
+    product?.sale_price && 
+    product.sale_price < product.price &&
+    (!saleStartDate || saleStartDate <= now) &&
+    (!saleEndDate || saleEndDate > now);
 
   const hasDiscount = product?.sale_price && product.sale_price < product.price;
   const displayPrice = hasDiscount ? product.sale_price : product?.price;
@@ -119,7 +209,13 @@ export default function ProductDetail() {
 
             {/* Badges */}
             <div className="absolute top-4 left-4 flex flex-col gap-2">
-              {hasDiscount && (
+              {isFlashSaleActive && (
+                <Badge variant="destructive" className="font-display text-sm px-3 py-1 animate-pulse bg-gradient-to-r from-destructive to-orange-500">
+                  <Zap className="h-4 w-4 mr-1" />
+                  Flash Sale! -{discountPercent}% OFF
+                </Badge>
+              )}
+              {!isFlashSaleActive && hasDiscount && (
                 <Badge variant="destructive" className="font-display text-sm px-3 py-1">
                   -{discountPercent}% OFF
                 </Badge>
@@ -160,15 +256,28 @@ export default function ProductDetail() {
               {product.name}
             </h1>
 
+            {/* Flash Sale Countdown */}
+            {isFlashSaleActive && saleEndDate && (
+              <CountdownTimer endDate={product.sale_end_date!} />
+            )}
+
             {/* Price */}
             <div className="flex items-baseline gap-3 mb-6">
-              <span className="font-display text-4xl font-bold text-foreground">
+              <span className={cn(
+                "font-display text-4xl font-bold",
+                isFlashSaleActive ? "text-destructive" : "text-foreground"
+              )}>
                 ${displayPrice?.toFixed(2)}
               </span>
               {hasDiscount && (
                 <span className="text-xl text-muted-foreground line-through">
                   ${product.price.toFixed(2)}
                 </span>
+              )}
+              {hasDiscount && (
+                <Badge variant="secondary" className="text-sm">
+                  Save ${(product.price - product.sale_price!).toFixed(2)}
+                </Badge>
               )}
             </div>
 
@@ -212,12 +321,17 @@ export default function ProductDetail() {
                 <>
                   <Button
                     size="lg"
-                    className="flex-1 glow-purple"
+                    className={cn(
+                      "flex-1",
+                      isFlashSaleActive 
+                        ? "bg-gradient-to-r from-destructive to-orange-500 hover:from-destructive/90 hover:to-orange-500/90" 
+                        : "glow-purple"
+                    )}
                     onClick={handleAddToCart}
                     disabled={addToCart.isPending || product.stock <= 0}
                   >
                     <ShoppingCart className="h-5 w-5 mr-2" />
-                    {product.stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
+                    {product.stock <= 0 ? 'Out of Stock' : isFlashSaleActive ? 'Buy Now - Flash Sale!' : 'Add to Cart'}
                   </Button>
                   <Button
                     size="lg"
