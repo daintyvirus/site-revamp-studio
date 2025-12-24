@@ -153,12 +153,18 @@ export default function HeroSection() {
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style={{ animationDelay: '0.3s' }}>
-            <Button asChild size="lg" className="glow-primary text-lg px-8 bg-gradient-to-r from-primary to-destructive hover:from-primary/90 hover:to-destructive/90 border-0">
-              <Link to="/shop">
-                <Zap className="h-5 w-5 mr-2" />
-                Shop Now
-              </Link>
-            </Button>
+            <div className="relative group">
+              {/* Pulsing Glow Rings */}
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary via-destructive to-primary rounded-lg opacity-75 blur-sm animate-pulse" />
+              <div className="absolute -inset-2 bg-gradient-to-r from-primary via-destructive to-primary rounded-lg opacity-40 blur-md animate-pulse" style={{ animationDelay: '0.5s' }} />
+              <div className="absolute -inset-3 bg-gradient-to-r from-primary via-destructive to-primary rounded-lg opacity-20 blur-lg animate-pulse" style={{ animationDelay: '1s' }} />
+              <Button asChild size="lg" className="relative glow-primary text-lg px-8 bg-gradient-to-r from-primary to-destructive hover:from-primary/90 hover:to-destructive/90 border-0">
+                <Link to="/shop">
+                  <Zap className="h-5 w-5 mr-2" />
+                  Shop Now
+                </Link>
+              </Button>
+            </div>
             <Button asChild variant="outline" size="lg" className="text-lg px-8">
               <Link to="/shop?category=gift-cards">
                 Browse Gift Cards
