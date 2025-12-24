@@ -27,6 +27,12 @@ interface EmailTemplate {
   help_center_url: string | null;
   social_links: any;
   custom_css: string | null;
+  greeting_format: string;
+  closing_text: string;
+  signature_name: string;
+  order_id_label: string;
+  order_total_label: string;
+  status_label: string;
   is_active: boolean;
 }
 
@@ -107,6 +113,12 @@ function generateEmailHtml(template: EmailTemplate, customerName: string, orderI
   const processedBodyContent = template.body_content ? replaceShortcodes(template.body_content, customerName, orderId, orderTotal, template, refundAmount) : '';
   const processedFooter = template.footer_text ? replaceShortcodes(template.footer_text, customerName, orderId, orderTotal, template, refundAmount) : 'This is an automated message.';
   const companyName = template.company_name || 'Golden Bumps';
+  const greetingFormat = replaceShortcodes(template.greeting_format || 'Dear {customer_name},', customerName, orderId, orderTotal, template, refundAmount);
+  const closingText = replaceShortcodes(template.closing_text || 'Best regards,', customerName, orderId, orderTotal, template, refundAmount);
+  const signatureName = replaceShortcodes(template.signature_name || template.sender_name, customerName, orderId, orderTotal, template, refundAmount);
+  const orderIdLabel = template.order_id_label || 'Order ID:';
+  const orderTotalLabel = template.order_total_label || 'Original Order Total:';
+  const statusLabel = template.status_label || 'Status:';
 
   return `
     <!DOCTYPE html>
@@ -127,7 +139,7 @@ function generateEmailHtml(template: EmailTemplate, customerName: string, orderI
         .info-box { background: #FEF3C7; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #FDE68A; }
         .cta { display: inline-block; background: linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%); color: #1a1a1a; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; }
         .footer { background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none; }
-        .footer p { margin: 5px 0; color: #6b7280; font-size: 12px; }
+        .footer p { margin: 5px 0; color: #6b7280; font-size: 12px; white-space: pre-line; }
         ${template.custom_css || ''}
       </style>
     </head>
@@ -138,7 +150,7 @@ function generateEmailHtml(template: EmailTemplate, customerName: string, orderI
           <h1>${template.header_title}</h1>
         </div>
         <div class="content">
-          <p>Dear <strong>${customerName || "Valued Customer"}</strong>,</p>
+          <p>${greetingFormat}</p>
           <p>${processedBodyIntro}</p>
           ${processedBodyContent ? `<p>${processedBodyContent}</p>` : ''}
           
@@ -150,9 +162,9 @@ function generateEmailHtml(template: EmailTemplate, customerName: string, orderI
 
           ${template.show_order_details ? `
           <div class="order-info">
-            <p><strong>Order ID:</strong> #${orderId.slice(0, 8).toUpperCase()}</p>
-            <p><strong>Original Order Total:</strong> ₱${orderTotal.toLocaleString()}</p>
-            <p><strong>Status:</strong> <span class="status-badge">Refunded</span></p>
+            <p><strong>${orderIdLabel}</strong> #${orderId.slice(0, 8).toUpperCase()}</p>
+            <p><strong>${orderTotalLabel}</strong> ₱${orderTotal.toLocaleString()}</p>
+            <p><strong>${statusLabel}</strong> <span class="status-badge">Refunded</span></p>
           </div>
           ` : ''}
 
@@ -171,7 +183,7 @@ function generateEmailHtml(template: EmailTemplate, customerName: string, orderI
 
           <p style="margin-top: 25px;">Thank you for your patience. We hope to serve you again soon!</p>
           
-          <p>Best regards,<br><strong>${template.sender_name}</strong></p>
+          <p>${closingText}<br><strong>${signatureName}</strong></p>
         </div>
         <div class="footer">
           <p>${processedFooter}</p>

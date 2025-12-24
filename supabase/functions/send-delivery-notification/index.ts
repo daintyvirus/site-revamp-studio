@@ -27,6 +27,12 @@ interface EmailTemplate {
   help_center_url: string | null;
   social_links: any;
   custom_css: string | null;
+  greeting_format: string;
+  closing_text: string;
+  signature_name: string;
+  order_id_label: string;
+  order_total_label: string;
+  status_label: string;
   is_active: boolean;
 }
 
@@ -103,7 +109,12 @@ function generateEmailHtml(template: EmailTemplate, customerName: string, orderI
   const processedBodyContent = template.body_content ? replaceShortcodes(template.body_content, customerName, orderId, orderTotal, template) : '';
   const processedFooter = template.footer_text ? replaceShortcodes(template.footer_text, customerName, orderId, orderTotal, template) : 'This is an automated message.';
   const companyName = template.company_name || 'Golden Bumps';
-  const supportEmail = template.support_email || template.sender_email;
+  const greetingFormat = replaceShortcodes(template.greeting_format || 'Dear {customer_name},', customerName, orderId, orderTotal, template);
+  const closingText = replaceShortcodes(template.closing_text || 'Warm regards,', customerName, orderId, orderTotal, template);
+  const signatureName = replaceShortcodes(template.signature_name || template.sender_name, customerName, orderId, orderTotal, template);
+  const orderIdLabel = template.order_id_label || 'Order ID:';
+  const orderTotalLabel = template.order_total_label || 'Order Total:';
+  const statusLabel = template.status_label || 'Status:';
 
   return `
     <!DOCTYPE html>
@@ -122,7 +133,7 @@ function generateEmailHtml(template: EmailTemplate, customerName: string, orderI
         .celebration { text-align: center; font-size: 48px; margin: 20px 0; }
         .review-box { background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; border: 1px solid #F59E0B; }
         .footer { background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none; }
-        .footer p { margin: 5px 0; color: #6b7280; font-size: 12px; }
+        .footer p { margin: 5px 0; color: #6b7280; font-size: 12px; white-space: pre-line; }
         .cta { display: inline-block; background: linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%); color: #1a1a1a; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; }
         .thank-you { background: linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 24px; font-weight: bold; }
         ${template.custom_css || ''}
@@ -137,15 +148,15 @@ function generateEmailHtml(template: EmailTemplate, customerName: string, orderI
         <div class="content">
           <div class="celebration">🎊✨🛍️✨🎊</div>
           
-          <p>Dear <strong>${customerName || "Valued Customer"}</strong>,</p>
+          <p>${greetingFormat}</p>
           <p>${processedBodyIntro}</p>
           ${processedBodyContent ? `<p>${processedBodyContent}</p>` : ''}
           
           ${template.show_order_details ? `
           <div class="order-info">
-            <p><strong>Order ID:</strong> #${orderId.slice(0, 8).toUpperCase()}</p>
-            <p><strong>Order Total:</strong> ₱${orderTotal.toLocaleString()}</p>
-            <p><strong>Status:</strong> <span class="status-badge">✓ Delivered</span></p>
+            <p><strong>${orderIdLabel}</strong> #${orderId.slice(0, 8).toUpperCase()}</p>
+            <p><strong>${orderTotalLabel}</strong> ₱${orderTotal.toLocaleString()}</p>
+            <p><strong>${statusLabel}</strong> <span class="status-badge">✓ Delivered</span></p>
           </div>
           ` : ''}
 
@@ -164,7 +175,7 @@ function generateEmailHtml(template: EmailTemplate, customerName: string, orderI
 
           <p style="margin-top: 25px;" class="thank-you">Thank You for Shopping with ${companyName}!</p>
           
-          <p>Warm regards,<br><strong>${template.sender_name}</strong></p>
+          <p>${closingText}<br><strong>${signatureName}</strong></p>
         </div>
         <div class="footer">
           <p>${processedFooter}</p>
