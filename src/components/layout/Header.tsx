@@ -15,6 +15,7 @@ import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useNavigationMenu } from '@/hooks/useNavigationMenu';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { cn } from '@/lib/utils';
 
 export default function Header() {
@@ -87,6 +88,8 @@ export default function Header() {
 
           {/* Actions */}
           <div className="flex items-center gap-1">
+            {/* Theme Toggle */}
+            <ThemeToggle />
             {/* Wishlist */}
             <Button variant="ghost" size="icon" asChild className="relative hover:bg-secondary">
               <Link to="/wishlist">
