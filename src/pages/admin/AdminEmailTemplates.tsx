@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, Mail, Eye, Palette, Type, FileText, Loader2 } from 'lucide-react';
+import { Save, Mail, Eye, Palette, FileText, Loader2, Send } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,9 +14,22 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { useEmailTemplates, useUpdateEmailTemplate, statusTypeLabels, EmailTemplate } from '@/hooks/useEmailTemplates';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+
+// Map status_type to edge function name
+const statusToFunctionMap: Record<string, string> = {
+  order_confirmation: 'send-order-confirmation',
+  payment_paid: 'send-payment-notification',
+  payment_failed: 'send-payment-notification',
+  shipping: 'send-shipping-notification',
+  delivery: 'send-delivery-notification',
+  cancelled: 'send-cancellation-notification',
+  refunded: 'send-refund-notification',
+};
 
 export default function AdminEmailTemplates() {
   const { data: templates, isLoading } = useEmailTemplates();
@@ -24,6 +37,11 @@ export default function AdminEmailTemplates() {
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
   const [formData, setFormData] = useState<Partial<EmailTemplate>>({});
+  
+  // Test email state
+  const [testEmailTemplate, setTestEmailTemplate] = useState<EmailTemplate | null>(null);
+  const [testEmailAddress, setTestEmailAddress] = useState('');
+  const [sendingTestEmail, setSendingTestEmail] = useState(false);
 
   const handleEdit = (template: EmailTemplate) => {
     setEditingTemplate(template);
@@ -55,6 +73,68 @@ export default function AdminEmailTemplates() {
       setEditingTemplate(null);
     } catch (error) {
       toast.error('Failed to update email template');
+    }
+  };
+
+  const handleSendTestEmail = async () => {
+    if (!testEmailTemplate || !testEmailAddress) {
+      toast.error('Please enter an email address');
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(testEmailAddress)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setSendingTestEmail(true);
+
+    try {
+      const functionName = statusToFunctionMap[testEmailTemplate.status_type];
+      
+      // Build request body based on status type
+      let body: Record<string, any> = {
+        customerEmail: testEmailAddress,
+        customerName: 'Test Customer',
+        orderId: 'test12345678',
+        orderTotal: 1500,
+      };
+
+      // Add specific fields based on status type
+      if (testEmailTemplate.status_type === 'payment_paid') {
+        body.paymentStatus = 'paid';
+      } else if (testEmailTemplate.status_type === 'payment_failed') {
+        body.paymentStatus = 'failed';
+      } else if (testEmailTemplate.status_type === 'order_confirmation') {
+        body.paymentMethod = 'GCash';
+        body.transactionId = 'TEST-TXN-123456';
+        body.items = [
+          { name: 'Test Product 1', quantity: 2, price: 500 },
+          { name: 'Test Product 2', quantity: 1, price: 500 },
+        ];
+      } else if (testEmailTemplate.status_type === 'refunded') {
+        body.refundAmount = 1500;
+      }
+
+      const { data, error } = await supabase.functions.invoke(functionName, { body });
+
+      if (error) {
+        console.error('Error sending test email:', error);
+        toast.error('Failed to send test email');
+      } else if (data?.success) {
+        toast.success(`Test email sent to ${testEmailAddress}`);
+        setTestEmailTemplate(null);
+        setTestEmailAddress('');
+      } else {
+        toast.error(data?.message || 'Failed to send test email');
+      }
+    } catch (error) {
+      console.error('Error sending test email:', error);
+      toast.error('Failed to send test email');
+    } finally {
+      setSendingTestEmail(false);
     }
   };
 
@@ -172,6 +252,14 @@ export default function AdminEmailTemplates() {
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => setPreviewTemplate(template)}>
                       <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setTestEmailTemplate(template)}
+                      title="Send Test Email"
+                    >
+                      <Send className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardContent>
@@ -380,6 +468,56 @@ export default function AdminEmailTemplates() {
               dangerouslySetInnerHTML={{ __html: renderPreviewEmail(previewTemplate) }}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Test Email Dialog */}
+      <Dialog open={!!testEmailTemplate} onOpenChange={() => { setTestEmailTemplate(null); setTestEmailAddress(''); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <Send className="h-5 w-5" />
+              Send Test Email
+            </DialogTitle>
+            <DialogDescription>
+              Send a test email for "{testEmailTemplate && statusTypeLabels[testEmailTemplate.status_type]}" template to preview how it looks in an email client.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="test_email">Email Address</Label>
+              <Input
+                id="test_email"
+                type="email"
+                value={testEmailAddress}
+                onChange={(e) => setTestEmailAddress(e.target.value)}
+                placeholder="your@email.com"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSendTestEmail();
+                  }
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                A test email with sample data will be sent to this address.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => { setTestEmailTemplate(null); setTestEmailAddress(''); }}>
+              Cancel
+            </Button>
+            <Button onClick={handleSendTestEmail} disabled={sendingTestEmail || !testEmailAddress}>
+              {sendingTestEmail ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 mr-2" />
+              )}
+              Send Test Email
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </AdminLayout>
