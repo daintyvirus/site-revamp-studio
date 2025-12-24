@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Pencil, Trash2, Search, Upload, Download, Calculator, ExternalLink, AlertTriangle } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Upload, Download, Calculator, ExternalLink, AlertTriangle, Copy, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -35,10 +35,20 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal } from 'lucide-react';
 import ProductForm from '@/components/admin/ProductForm';
 import ProductImportDialog from '@/components/admin/ProductImportDialog';
 import ProductExportDialog from '@/components/admin/ProductExportDialog';
 import BulkOperations from '@/components/admin/BulkOperations';
+import ProductDuplicateDialog from '@/components/admin/ProductDuplicateDialog';
+import ProductQuickEdit from '@/components/admin/ProductQuickEdit';
 import { useAdminProducts, useDeleteProduct } from '@/hooks/useProducts';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import type { Product } from '@/types/database';
@@ -52,6 +62,8 @@ export default function AdminProducts() {
   const [isBulkEditOpen, setIsBulkEditOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [duplicatingProduct, setDuplicatingProduct] = useState<Product | null>(null);
+  const [quickEditProduct, setQuickEditProduct] = useState<Product | null>(null);
 
   const { data: products, isLoading, refetch } = useAdminProducts();
   const { data: settingsMap } = useSiteSettings();
@@ -175,7 +187,14 @@ export default function AdminProducts() {
                         </div>
                         <div>
                           <p className="font-medium">{product.name}</p>
-                          <p className="text-xs text-muted-foreground">{product.slug}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-xs text-muted-foreground">{product.slug}</p>
+                            {product.variants && product.variants.length > 0 && (
+                              <Badge variant="outline" className="text-[10px] h-4 px-1">
+                                {product.variants.length} var
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </TableCell>
@@ -210,9 +229,16 @@ export default function AdminProducts() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={product.is_active ? 'default' : 'secondary'}>
-                        {product.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
+                      <div className="flex items-center gap-1">
+                        <Badge variant={product.is_active ? 'default' : 'secondary'}>
+                          {product.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                        {product.is_featured && (
+                          <Badge variant="outline" className="text-amber-500 border-amber-500/50">
+                            Featured
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -228,12 +254,36 @@ export default function AdminProducts() {
                             <TooltipContent>View Product</TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(product)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeletingProduct(product)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setQuickEditProduct(product)}>
+                              <Zap className="h-4 w-4 mr-2" />
+                              Quick Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEdit(product)}>
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Full Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setDuplicatingProduct(product)}>
+                              <Copy className="h-4 w-4 mr-2" />
+                              Duplicate
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => setDeletingProduct(product)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -291,6 +341,22 @@ export default function AdminProducts() {
       <BulkOperations
         open={isBulkEditOpen}
         onOpenChange={setIsBulkEditOpen}
+        onComplete={() => refetch()}
+      />
+
+      {/* Duplicate Product */}
+      <ProductDuplicateDialog
+        product={duplicatingProduct}
+        open={!!duplicatingProduct}
+        onOpenChange={(open) => !open && setDuplicatingProduct(null)}
+        onComplete={() => refetch()}
+      />
+
+      {/* Quick Edit */}
+      <ProductQuickEdit
+        product={quickEditProduct}
+        open={!!quickEditProduct}
+        onOpenChange={(open) => !open && setQuickEditProduct(null)}
         onComplete={() => refetch()}
       />
     </AdminLayout>
