@@ -25,6 +25,12 @@ interface EmailTemplate {
   company_name: string | null;
   company_logo_url: string | null;
   help_center_url: string | null;
+  greeting_format: string;
+  closing_text: string;
+  signature_name: string;
+  order_id_label: string;
+  order_total_label: string;
+  status_label: string;
   is_active: boolean;
 }
 
@@ -110,7 +116,12 @@ function generateEmailHtml(
   const footerText = template.footer_text ? replaceShortcodes(template.footer_text, shortcodeData) : '';
   const buttonText = template.tracking_button_text ? replaceShortcodes(template.tracking_button_text, shortcodeData) : 'Track Your Order';
   const companyName = template.company_name || 'Golden Bumps';
-  const supportEmail = template.support_email || template.sender_email;
+  const greetingFormat = replaceShortcodes(template.greeting_format || 'Dear {customer_name},', shortcodeData);
+  const closingText = replaceShortcodes(template.closing_text || 'Best regards,', shortcodeData);
+  const signatureName = replaceShortcodes(template.signature_name || template.sender_name, shortcodeData);
+  const orderIdLabel = template.order_id_label || 'Order ID:';
+  const orderTotalLabel = template.order_total_label || 'Order Total:';
+  const statusLabel = template.status_label || 'Status:';
 
   return `
     <!DOCTYPE html>
@@ -142,16 +153,16 @@ function generateEmailHtml(
           <h1>${headerTitle}</h1>
         </div>
         <div class="content">
-          <p>Dear <strong>${shortcodeData.customer_name || "Valued Customer"}</strong>,</p>
+          <p>${greetingFormat}</p>
           <p>${bodyIntro}</p>
           ${bodyContent ? `<p>${bodyContent}</p>` : ''}
           
           ${template.show_order_details ? `
           <div class="order-info">
-            <p><strong>Order ID:</strong> #${shortcodeData.order_id}</p>
+            <p><strong>${orderIdLabel}</strong> #${shortcodeData.order_id}</p>
             <p><strong>Transaction ID:</strong> ${shortcodeData.transaction_id}</p>
             <p><strong>Payment Method:</strong> ${shortcodeData.payment_method}</p>
-            <p><strong>Payment Status:</strong> <span class="status-badge">Pending Verification</span></p>
+            <p><strong>${statusLabel}</strong> <span class="status-badge">Pending Verification</span></p>
           </div>
 
           <h3 style="margin-top: 25px;">Order Items</h3>
@@ -166,7 +177,7 @@ function generateEmailHtml(
             <tbody>
               ${itemsHtml}
               <tr class="total-row">
-                <td colspan="2" style="padding: 15px 12px; text-align: right;">Total:</td>
+                <td colspan="2" style="padding: 15px 12px; text-align: right;">${orderTotalLabel}</td>
                 <td style="padding: 15px 12px; text-align: right;">₱${shortcodeData.order_total}</td>
               </tr>
             </tbody>
@@ -188,7 +199,7 @@ function generateEmailHtml(
 
           <p style="margin-top: 25px;">If you have any questions about your order, please don't hesitate to contact us.</p>
           
-          <p>Best regards,<br><strong>${template.sender_name}</strong></p>
+          <p>${closingText}<br><strong>${signatureName}</strong></p>
         </div>
         <div class="footer">
           <p>${footerText}</p>

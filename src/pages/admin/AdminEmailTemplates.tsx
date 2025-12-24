@@ -64,6 +64,12 @@ export default function AdminEmailTemplates() {
       company_name: template.company_name || '',
       company_logo_url: template.company_logo_url || '',
       help_center_url: template.help_center_url || '',
+      greeting_format: template.greeting_format || 'Dear {customer_name},',
+      closing_text: template.closing_text || 'Best regards,',
+      signature_name: template.signature_name || '{company_name}',
+      order_id_label: template.order_id_label || 'Order ID:',
+      order_total_label: template.order_total_label || 'Order Total:',
+      status_label: template.status_label || 'Status:',
     });
   };
 
@@ -247,6 +253,11 @@ export default function AdminEmailTemplates() {
                 <Input value={formData.header_title || ''} onChange={(e) => setFormData({ ...formData, header_title: e.target.value })} />
               </div>
               <div className="space-y-2">
+                <Label>Greeting Format</Label>
+                <Input value={formData.greeting_format || ''} onChange={(e) => setFormData({ ...formData, greeting_format: e.target.value })} placeholder="Dear {customer_name}," />
+                <p className="text-xs text-muted-foreground">Use {'{customer_name}'} for the customer's name</p>
+              </div>
+              <div className="space-y-2">
                 <Label>Introduction Text</Label>
                 <Textarea value={formData.body_intro || ''} onChange={(e) => setFormData({ ...formData, body_intro: e.target.value })} rows={3} />
               </div>
@@ -254,10 +265,36 @@ export default function AdminEmailTemplates() {
                 <Label>Additional Content</Label>
                 <Textarea value={formData.body_content || ''} onChange={(e) => setFormData({ ...formData, body_content: e.target.value })} rows={3} />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Closing Text</Label>
+                  <Input value={formData.closing_text || ''} onChange={(e) => setFormData({ ...formData, closing_text: e.target.value })} placeholder="Best regards," />
+                </div>
+                <div className="space-y-2">
+                  <Label>Signature Name</Label>
+                  <Input value={formData.signature_name || ''} onChange={(e) => setFormData({ ...formData, signature_name: e.target.value })} placeholder="{company_name}" />
+                </div>
+              </div>
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div><Label>Show Order Details</Label></div>
                 <Switch checked={formData.show_order_details ?? true} onCheckedChange={(checked) => setFormData({ ...formData, show_order_details: checked })} />
               </div>
+              {formData.show_order_details && (
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Order ID Label</Label>
+                    <Input value={formData.order_id_label || ''} onChange={(e) => setFormData({ ...formData, order_id_label: e.target.value })} placeholder="Order ID:" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Total Label</Label>
+                    <Input value={formData.order_total_label || ''} onChange={(e) => setFormData({ ...formData, order_total_label: e.target.value })} placeholder="Order Total:" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Status Label</Label>
+                    <Input value={formData.status_label || ''} onChange={(e) => setFormData({ ...formData, status_label: e.target.value })} placeholder="Status:" />
+                  </div>
+                </div>
+              )}
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div><Label>Show Tracking Button</Label></div>
                 <Switch checked={formData.show_tracking_button ?? true} onCheckedChange={(checked) => setFormData({ ...formData, show_tracking_button: checked })} />

@@ -155,21 +155,27 @@ export type Database = {
         Row: {
           body_content: string | null
           body_intro: string
+          closing_text: string
           company_logo_url: string | null
           company_name: string | null
           created_at: string
           custom_css: string | null
           footer_text: string | null
+          greeting_format: string
           header_color: string
           header_title: string
           help_center_url: string | null
           id: string
           is_active: boolean
+          order_id_label: string
+          order_total_label: string
           sender_email: string
           sender_name: string
           show_order_details: boolean
           show_tracking_button: boolean
+          signature_name: string
           social_links: Json | null
+          status_label: string
           status_type: string
           subject_template: string
           support_email: string | null
@@ -179,21 +185,27 @@ export type Database = {
         Insert: {
           body_content?: string | null
           body_intro: string
+          closing_text?: string
           company_logo_url?: string | null
           company_name?: string | null
           created_at?: string
           custom_css?: string | null
           footer_text?: string | null
+          greeting_format?: string
           header_color?: string
           header_title: string
           help_center_url?: string | null
           id?: string
           is_active?: boolean
+          order_id_label?: string
+          order_total_label?: string
           sender_email?: string
           sender_name?: string
           show_order_details?: boolean
           show_tracking_button?: boolean
+          signature_name?: string
           social_links?: Json | null
+          status_label?: string
           status_type: string
           subject_template: string
           support_email?: string | null
@@ -203,21 +215,27 @@ export type Database = {
         Update: {
           body_content?: string | null
           body_intro?: string
+          closing_text?: string
           company_logo_url?: string | null
           company_name?: string | null
           created_at?: string
           custom_css?: string | null
           footer_text?: string | null
+          greeting_format?: string
           header_color?: string
           header_title?: string
           help_center_url?: string | null
           id?: string
           is_active?: boolean
+          order_id_label?: string
+          order_total_label?: string
           sender_email?: string
           sender_name?: string
           show_order_details?: boolean
           show_tracking_button?: boolean
+          signature_name?: string
           social_links?: Json | null
+          status_label?: string
           status_type?: string
           subject_template?: string
           support_email?: string | null

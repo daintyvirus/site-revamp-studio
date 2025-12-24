@@ -24,6 +24,12 @@ interface EmailTemplate {
   support_email: string | null;
   company_name: string | null;
   company_logo_url: string | null;
+  greeting_format: string;
+  closing_text: string;
+  signature_name: string;
+  order_id_label: string;
+  order_total_label: string;
+  status_label: string;
   is_active: boolean;
 }
 
@@ -79,6 +85,11 @@ function generateEmailHtml(template: EmailTemplate, shortcodeData: Record<string
   const bodyContent = template.body_content ? replaceShortcodes(template.body_content, shortcodeData) : '';
   const footerText = template.footer_text ? replaceShortcodes(template.footer_text, shortcodeData) : '';
   const buttonText = template.tracking_button_text ? replaceShortcodes(template.tracking_button_text, shortcodeData) : 'Track Your Order';
+  const greetingFormat = replaceShortcodes(template.greeting_format || 'Dear {customer_name},', shortcodeData);
+  const closingText = replaceShortcodes(template.closing_text || 'Best regards,', shortcodeData);
+  const signatureName = replaceShortcodes(template.signature_name || template.sender_name, shortcodeData);
+  const orderIdLabel = template.order_id_label || 'Order ID:';
+  const orderTotalLabel = template.order_total_label || 'Order Total:';
 
   return `
     <!DOCTYPE html>
@@ -104,14 +115,14 @@ function generateEmailHtml(template: EmailTemplate, shortcodeData: Record<string
           <h1>${headerTitle}</h1>
         </div>
         <div class="content">
-          <p>Dear <strong>${shortcodeData.customer_name}</strong>,</p>
+          <p>${greetingFormat}</p>
           <p>${bodyIntro}</p>
           ${bodyContent ? `<p>${bodyContent}</p>` : ''}
           
           ${template.show_order_details ? `
           <div class="order-info">
-            <p><strong>Order ID:</strong> #${shortcodeData.order_id}</p>
-            <p><strong>Total:</strong> ₱${shortcodeData.order_total}</p>
+            <p><strong>${orderIdLabel}</strong> #${shortcodeData.order_id}</p>
+            <p><strong>${orderTotalLabel}</strong> ₱${shortcodeData.order_total}</p>
           </div>
           ` : ''}
 
@@ -121,7 +132,7 @@ function generateEmailHtml(template: EmailTemplate, shortcodeData: Record<string
           </div>
           ` : ''}
 
-          <p>Best regards,<br><strong>${template.sender_name}</strong></p>
+          <p>${closingText}<br><strong>${signatureName}</strong></p>
         </div>
         <div class="footer">
           <p>${footerText}</p>
