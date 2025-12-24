@@ -3,12 +3,32 @@ import { Button } from '@/components/ui/button';
 import { Sparkles, Zap, ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+const fullDescription = "Get instant access to gift cards, game top-ups, subscriptions, and premium gaming accounts. Fast, secure, and reliable.";
+
 export default function HeroSection() {
   const [isVisible, setIsVisible] = useState(false);
+  const [displayedText, setDisplayedText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   
   useEffect(() => {
     setIsVisible(true);
+    // Start typing after headline animation completes
+    const typingDelay = setTimeout(() => {
+      setIsTyping(true);
+    }, 900);
+    return () => clearTimeout(typingDelay);
   }, []);
+
+  useEffect(() => {
+    if (!isTyping) return;
+    
+    if (displayedText.length < fullDescription.length) {
+      const timeout = setTimeout(() => {
+        setDisplayedText(fullDescription.slice(0, displayedText.length + 1));
+      }, 25);
+      return () => clearTimeout(timeout);
+    }
+  }, [isTyping, displayedText]);
 
   const titleWords = ['LEVEL', 'UP', 'YOUR'];
   const gradientWords = ['GAMING', 'EXPERIENCE'];
@@ -77,9 +97,12 @@ export default function HeroSection() {
             </span>
           </h1>
 
-          {/* Description */}
-          <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            Get instant access to gift cards, game top-ups, subscriptions, and premium gaming accounts. Fast, secure, and reliable.
+          {/* Description with Typewriter Effect */}
+          <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto mb-8 h-[60px] md:h-[56px]">
+            {displayedText}
+            {displayedText.length < fullDescription.length && (
+              <span className="inline-block w-0.5 h-5 bg-primary ml-1 animate-pulse" />
+            )}
           </p>
 
           {/* CTAs */}
