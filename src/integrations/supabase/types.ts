@@ -656,6 +656,56 @@ export type Database = {
           },
         ]
       }
+      product_reviews: {
+        Row: {
+          admin_notes: string | null
+          content: string
+          created_at: string
+          id: string
+          is_approved: boolean
+          is_featured: boolean
+          product_id: string
+          rating: number
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          is_approved?: boolean
+          is_featured?: boolean
+          product_id: string
+          rating: number
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_approved?: boolean
+          is_featured?: boolean
+          product_id?: string
+          rating?: number
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_variants: {
         Row: {
           created_at: string
