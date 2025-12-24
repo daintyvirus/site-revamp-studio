@@ -137,7 +137,7 @@ export default function HeroSection() {
               {gradientWords.map((word, index) => (
                 <span
                   key={word}
-                  className={`inline-block text-transparent bg-clip-text bg-gradient-to-r from-primary via-destructive to-accent animate-gradient-text transition-all duration-700 ease-out drop-shadow-lg ${
+                  className={`inline-block text-transparent bg-clip-text bg-gradient-to-r from-primary via-destructive to-accent transition-all duration-700 ease-out drop-shadow-lg ${
                     isVisible 
                       ? 'translate-y-0 opacity-100 blur-0' 
                       : 'translate-y-full opacity-0 blur-sm'
@@ -145,7 +145,6 @@ export default function HeroSection() {
                   style={{ 
                     transitionDelay: `${index * 150 + 500}ms`,
                     marginRight: '0.3em',
-                    backgroundSize: '200% auto',
                   }}
                 >
                   {word}
