@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, Heart, User, Menu, X, Gamepad2, LogOut, Settings } from 'lucide-react';
+import { Search, ShoppingCart, Heart, User, Menu, X, Gamepad2, LogOut, Settings, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -126,6 +126,12 @@ export default function Header() {
                     <Link to="/orders" className="flex items-center gap-2">
                       <ShoppingCart className="h-4 w-4" />
                       My Orders
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/track-order" className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Track Order
                     </Link>
                   </DropdownMenuItem>
                   {isAdmin && (
