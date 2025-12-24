@@ -69,18 +69,18 @@ export default function HeroSection() {
       <div className="absolute inset-0 bg-gradient-to-br from-primary/40 via-primary/20 to-background" />
       <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
       
-      {/* Animated Glow Orbs with Parallax + Mouse Follow */}
+      {/* Glow Orbs with Parallax + Mouse Follow */}
       <div 
-        className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/30 rounded-full blur-[120px] animate-pulse transition-transform duration-300 ease-out"
+        className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/30 rounded-full blur-[120px] transition-transform duration-300 ease-out"
         style={{ transform: `translate(${mousePos.x * 30}px, ${scrollY * 0.3 + mousePos.y * 20}px)` }}
       />
       <div 
-        className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-destructive/20 rounded-full blur-[100px] animate-pulse transition-transform duration-500 ease-out"
-        style={{ transform: `translate(${mousePos.x * -20}px, ${scrollY * 0.15 + mousePos.y * -15}px)`, animationDelay: '1s' }}
+        className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-destructive/20 rounded-full blur-[100px] transition-transform duration-500 ease-out"
+        style={{ transform: `translate(${mousePos.x * -20}px, ${scrollY * 0.15 + mousePos.y * -15}px)` }}
       />
       <div 
-        className="absolute top-1/2 left-1/2 w-[600px] h-[600px] bg-primary/15 rounded-full blur-[150px] animate-pulse transition-transform duration-700 ease-out"
-        style={{ transform: `translate(calc(-50% + ${mousePos.x * 15}px), calc(-50% + ${scrollY * 0.2 + mousePos.y * 10}px))`, animationDelay: '0.5s' }}
+        className="absolute top-1/2 left-1/2 w-[600px] h-[600px] bg-primary/15 rounded-full blur-[150px] transition-transform duration-700 ease-out"
+        style={{ transform: `translate(calc(-50% + ${mousePos.x * 15}px), calc(-50% + ${scrollY * 0.2 + mousePos.y * 10}px))` }}
       />
       
       {/* Radial Glow Effect with Parallax */}
