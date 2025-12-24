@@ -20,6 +20,7 @@ export interface Product {
   id: string;
   name: string;
   slug: string;
+  sku: string | null;
   description: string | null;
   short_description: string | null;
   price: number;
@@ -35,6 +36,9 @@ export interface Product {
   flash_sale_enabled: boolean;
   sale_start_date: string | null;
   sale_end_date: string | null;
+  product_type: string | null;
+  wc_id: number | null;
+  tags: string[] | null;
   created_at: string;
   updated_at: string;
   category?: Category;
@@ -46,11 +50,13 @@ export interface ProductVariant {
   id: string;
   product_id: string;
   name: string;
+  sku: string | null;
   price: number;
   price_bdt: number;
   sale_price: number | null;
   sale_price_bdt: number | null;
   stock: number;
+  wc_id: number | null;
   created_at: string;
 }
 

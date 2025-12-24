@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Upload, Download } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import ProductForm from '@/components/admin/ProductForm';
+import ProductImportDialog from '@/components/admin/ProductImportDialog';
+import ProductExportDialog from '@/components/admin/ProductExportDialog';
 import { useAdminProducts, useDeleteProduct } from '@/hooks/useProducts';
 import type { Product } from '@/types/database';
 import { toast } from 'sonner';
@@ -36,10 +38,12 @@ import { toast } from 'sonner';
 export default function AdminProducts() {
   const [search, setSearch] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
 
-  const { data: products, isLoading } = useAdminProducts();
+  const { data: products, isLoading, refetch } = useAdminProducts();
   const deleteProduct = useDeleteProduct();
 
   const filteredProducts = products?.filter(p => 
@@ -75,10 +79,20 @@ export default function AdminProducts() {
             <h1 className="font-display text-3xl font-bold">Products</h1>
             <p className="text-muted-foreground">Manage your product catalog</p>
           </div>
-          <Button onClick={() => setIsFormOpen(true)} className="glow-purple">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Product
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setIsImportOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+            </Button>
+            <Button variant="outline" onClick={() => setIsExportOpen(true)}>
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button onClick={() => setIsFormOpen(true)} className="glow-purple">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Product
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
@@ -200,6 +214,19 @@ export default function AdminProducts() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Import Dialog */}
+      <ProductImportDialog 
+        open={isImportOpen} 
+        onOpenChange={setIsImportOpen}
+        onComplete={() => refetch()}
+      />
+
+      {/* Export Dialog */}
+      <ProductExportDialog 
+        open={isExportOpen} 
+        onOpenChange={setIsExportOpen}
+      />
     </AdminLayout>
   );
 }
