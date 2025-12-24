@@ -1,0 +1,278 @@
+import { useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { CheckCircle, Package, Clock, Mail, ArrowRight, Home, ShoppingBag, Copy, Check } from 'lucide-react';
+import Layout from '@/components/layout/Layout';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import confetti from 'canvas-confetti';
+
+interface OrderItem {
+  name: string;
+  quantity: number;
+  price: number;
+  variant?: string;
+}
+
+interface OrderDetails {
+  orderId: string;
+  total: number;
+  currency: string;
+  paymentMethod: string;
+  transactionId: string;
+  customerName: string;
+  customerEmail: string;
+  items: OrderItem[];
+}
+
+export default function OrderConfirmation() {
+  const location = useLocation();
+  const orderDetails = location.state as OrderDetails | null;
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    // Trigger confetti on mount
+    const duration = 3000;
+    const end = Date.now() + duration;
+
+    const frame = () => {
+      confetti({
+        particleCount: 3,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors: ['#D4AF37', '#22c55e', '#3b82f6']
+      });
+      confetti({
+        particleCount: 3,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors: ['#D4AF37', '#22c55e', '#3b82f6']
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    };
+
+    frame();
+  }, []);
+
+  const copyOrderId = () => {
+    if (orderDetails?.orderId) {
+      navigator.clipboard.writeText(orderDetails.orderId.slice(0, 8).toUpperCase());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const formatPrice = (amount: number, currency: string) => {
+    if (currency === 'USD') {
+      return `$${amount.toFixed(2)}`;
+    }
+    return `৳${Math.round(amount).toLocaleString()}`;
+  };
+
+  // If no order details, show generic success
+  if (!orderDetails) {
+    return (
+      <Layout>
+        <div className="min-h-[80vh] flex items-center justify-center bg-gradient-to-br from-green-50 via-background to-blue-50 dark:from-green-950/20 dark:via-background dark:to-blue-950/20">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center p-8"
+          >
+            <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="h-10 w-10 text-green-500" />
+            </div>
+            <h1 className="font-display text-3xl font-bold mb-2">Order Placed!</h1>
+            <p className="text-muted-foreground mb-6">Thank you for your order</p>
+            <div className="flex gap-3 justify-center">
+              <Button asChild variant="outline">
+                <Link to="/orders">View Orders</Link>
+              </Button>
+              <Button asChild>
+                <Link to="/shop">Continue Shopping</Link>
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="min-h-[80vh] bg-gradient-to-br from-green-50 via-background to-blue-50 dark:from-green-950/20 dark:via-background dark:to-blue-950/20 py-8">
+        <div className="container max-w-2xl mx-auto px-4">
+          {/* Success Animation */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-8"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+              className="w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-500/30"
+            >
+              <CheckCircle className="h-12 w-12 text-white" />
+            </motion.div>
+            <h1 className="font-display text-3xl md:text-4xl font-bold mb-2 text-green-600">
+              Order Placed Successfully!
+            </h1>
+            <p className="text-muted-foreground">
+              Thank you, {orderDetails.customerName}! Your order is being processed.
+            </p>
+          </motion.div>
+
+          {/* Order Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-card rounded-2xl border shadow-lg overflow-hidden"
+          >
+            {/* Order Header */}
+            <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Order ID</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-mono font-bold text-lg">
+                      #{orderDetails.orderId.slice(0, 8).toUpperCase()}
+                    </p>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={copyOrderId}>
+                      {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+                <Badge className="bg-yellow-500/20 text-yellow-600 border-yellow-500/30">
+                  <Clock className="h-3 w-3 mr-1" />
+                  Pending Verification
+                </Badge>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Status Timeline */}
+              <div className="flex items-center justify-center gap-2 text-sm">
+                <div className="flex items-center gap-1 text-green-500">
+                  <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                    <Check className="h-4 w-4 text-white" />
+                  </div>
+                  <span>Placed</span>
+                </div>
+                <div className="w-8 h-0.5 bg-yellow-500" />
+                <div className="flex items-center gap-1 text-yellow-500">
+                  <div className="w-6 h-6 rounded-full bg-yellow-500/20 border-2 border-yellow-500 flex items-center justify-center">
+                    <Clock className="h-3 w-3" />
+                  </div>
+                  <span>Verifying</span>
+                </div>
+                <div className="w-8 h-0.5 bg-muted" />
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                    <Package className="h-3 w-3" />
+                  </div>
+                  <span>Delivery</span>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Order Items */}
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <ShoppingBag className="h-4 w-4" />
+                  Order Items
+                </h3>
+                <div className="space-y-3">
+                  {orderDetails.items.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between bg-muted/50 rounded-lg p-3">
+                      <div>
+                        <p className="font-medium">{item.name}</p>
+                        {item.variant && (
+                          <p className="text-sm text-muted-foreground">Variant: {item.variant}</p>
+                        )}
+                        <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                      </div>
+                      <p className="font-bold">{formatPrice(item.price * item.quantity, orderDetails.currency)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Payment Details */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <p className="text-sm text-muted-foreground mb-1">Payment Method</p>
+                  <p className="font-medium capitalize">{orderDetails.paymentMethod}</p>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <p className="text-sm text-muted-foreground mb-1">Transaction ID</p>
+                  <p className="font-mono font-medium text-primary">{orderDetails.transactionId}</p>
+                </div>
+              </div>
+
+              {/* Total */}
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-medium">Total Amount ({orderDetails.currency})</span>
+                  <span className="text-2xl font-bold text-primary">
+                    {formatPrice(orderDetails.total, orderDetails.currency)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Email Notice */}
+              <div className="flex items-start gap-3 bg-blue-500/10 rounded-lg p-4">
+                <Mail className="h-5 w-5 text-blue-500 mt-0.5" />
+                <div>
+                  <p className="font-medium text-blue-600 dark:text-blue-400">Confirmation Email Sent</p>
+                  <p className="text-sm text-muted-foreground">
+                    We've sent order details to <strong>{orderDetails.customerEmail}</strong>. 
+                    You'll receive another email once your payment is verified.
+                  </p>
+                </div>
+              </div>
+
+              {/* What's Next */}
+              <div className="bg-amber-500/10 rounded-lg p-4">
+                <h4 className="font-semibold text-amber-600 dark:text-amber-400 mb-2">What's Next?</h4>
+                <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                  <li>Our team will verify your payment within 30 minutes</li>
+                  <li>You'll receive an email confirmation once verified</li>
+                  <li>Your digital product will be delivered to your account</li>
+                </ol>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="p-6 pt-0 flex flex-col sm:flex-row gap-3">
+              <Button asChild variant="outline" className="flex-1">
+                <Link to="/">
+                  <Home className="h-4 w-4 mr-2" />
+                  Back to Home
+                </Link>
+              </Button>
+              <Button asChild className="flex-1">
+                <Link to="/orders">
+                  View My Orders
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Link>
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </Layout>
+  );
+}

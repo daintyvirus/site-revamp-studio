@@ -401,15 +401,26 @@ export default function AdminOrders() {
                 <p className="font-semibold mb-2">Items</p>
                 <div className="space-y-2">
                   {selectedOrder.items?.map((item) => (
-                    <div key={item.id} className="flex justify-between text-sm">
-                      <span>{item.product?.name ?? 'Unknown'} × {item.quantity}</span>
-                      <span>${Number(item.price).toFixed(2)}</span>
+                    <div key={item.id} className="flex justify-between text-sm bg-muted/50 rounded-lg p-3">
+                      <div>
+                        <span className="font-medium">{item.product?.name ?? 'Unknown'}</span>
+                        {item.variant && (
+                          <span className="text-muted-foreground ml-2">({item.variant.name})</span>
+                        )}
+                        <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                      </div>
+                      <span className="font-bold">
+                        {(selectedOrder as any).currency === 'USD'
+                          ? `$${(Number(item.price) * item.quantity).toFixed(2)}`
+                          : `৳${Math.round(Number(item.price) * item.quantity).toLocaleString()}`
+                        }
+                      </span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="border-t border-border pt-4 flex justify-between font-bold">
+              <div className="border-t border-border pt-4 flex justify-between font-bold text-lg">
                 <span>Total ({(selectedOrder as any).currency || 'BDT'})</span>
                 <span className="text-primary">
                   {(selectedOrder as any).currency === 'USD'

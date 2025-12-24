@@ -100,12 +100,16 @@ export default function Checkout() {
     if (!selectedMethodSlug) return;
     
     try {
-      await checkout.mutateAsync({
+      const result = await checkout.mutateAsync({
         customerInfo,
         paymentMethod: selectedMethodSlug,
         transactionId: transactionId.trim()
       });
-      navigate('/orders');
+      // Navigate to order confirmation page with order details
+      navigate('/order-confirmation', { 
+        state: result.orderDetails,
+        replace: true 
+      });
     } catch (error) {
       // Error handled in hook
     }

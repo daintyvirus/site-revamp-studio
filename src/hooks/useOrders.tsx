@@ -17,7 +17,8 @@ export function useOrders() {
           *,
           items:order_items(
             *,
-            product:products(*)
+            product:products(*),
+            variant:product_variants(*)
           )
         `)
         .eq('user_id', user.id)
@@ -42,7 +43,8 @@ export function useAdminOrders() {
           *,
           items:order_items(
             *,
-            product:products(*)
+            product:products(*),
+            variant:product_variants(*)
           )
         `)
         .order('created_at', { ascending: false });
@@ -139,7 +141,8 @@ export function useOrder(orderId: string) {
           *,
           items:order_items(
             *,
-            product:products(*)
+            product:products(*),
+            variant:product_variants(*)
           )
         `)
         .eq('id', orderId)

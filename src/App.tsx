@@ -14,6 +14,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Auth from "./pages/Auth";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
+import OrderConfirmation from "./pages/OrderConfirmation";
 import Orders from "./pages/Orders";
 import OrderDelivery from "./pages/OrderDelivery";
 import TrackOrder from "./pages/TrackOrder";
@@ -77,6 +78,7 @@ function AnimatedRoutes() {
           <Route path="/auth" element={<Auth />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/order-confirmation" element={<OrderConfirmation />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/orders/:orderId/delivery" element={<OrderDelivery />} />
           <Route path="/track-order" element={<TrackOrder />} />
