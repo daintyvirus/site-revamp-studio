@@ -1,8 +1,11 @@
 import { Helmet } from 'react-helmet-async';
 import Layout from '@/components/layout/Layout';
 import HeroSection from '@/components/home/HeroSection';
+import AdvantagesSection from '@/components/home/AdvantagesSection';
 import CategorySection from '@/components/home/CategorySection';
+import BestSellersSection from '@/components/home/BestSellersSection';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
+import NewArrivalsSection from '@/components/home/NewArrivalsSection';
 import BrandsSection from '@/components/home/BrandsSection';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 
@@ -20,8 +23,11 @@ export default function Index() {
       </Helmet>
       <Layout>
         <HeroSection />
+        <AdvantagesSection />
         <CategorySection />
+        <BestSellersSection />
         <FeaturedProducts />
+        <NewArrivalsSection />
         <BrandsSection />
       </Layout>
     </>
