@@ -89,3 +89,65 @@ export function useUpdatePaymentStatus() {
     }
   });
 }
+
+export function useUpdateOrderDelivery() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      orderId, 
+      deliveryInfo, 
+      deliveryType, 
+      deliveryPlatform, 
+      deliveryInstructions 
+    }: { 
+      orderId: string; 
+      deliveryInfo: string;
+      deliveryType: string;
+      deliveryPlatform: string;
+      deliveryInstructions?: string;
+    }) => {
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          delivery_info: deliveryInfo,
+          delivery_type: deliveryType,
+          delivery_platform: deliveryPlatform,
+          delivery_instructions: deliveryInstructions,
+          delivered_at: new Date().toISOString(),
+          status: 'completed'
+        })
+        .eq('id', orderId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    }
+  });
+}
+
+export function useOrder(orderId: string) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['order', orderId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          items:order_items(
+            *,
+            product:products(*)
+          )
+        `)
+        .eq('id', orderId)
+        .single();
+      
+      if (error) throw error;
+      return data as Order;
+    },
+    enabled: !!user && !!orderId
+  });
+}

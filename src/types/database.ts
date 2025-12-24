@@ -96,6 +96,12 @@ export interface Order {
   customer_email: string | null;
   customer_phone: string | null;
   transaction_id: string | null;
+  delivery_info: string | null;
+  delivery_type: string | null;
+  delivery_platform: string | null;
+  delivery_instructions: string | null;
+  delivered_at: string | null;
+  delivery_email_sent: boolean;
   created_at: string;
   updated_at: string;
   items?: OrderItem[];
@@ -111,4 +117,15 @@ export interface OrderItem {
   created_at: string;
   product?: Product;
   variant?: ProductVariant;
+}
+
+export interface DeliveryLog {
+  id: string;
+  order_id: string;
+  action: string;
+  delivery_info_snapshot: string | null;
+  performed_by: string | null;
+  customer_ip: string | null;
+  error_message: string | null;
+  created_at: string;
 }

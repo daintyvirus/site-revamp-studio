@@ -107,6 +107,47 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_logs: {
+        Row: {
+          action: string
+          created_at: string
+          customer_ip: string | null
+          delivery_info_snapshot: string | null
+          error_message: string | null
+          id: string
+          order_id: string
+          performed_by: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          customer_ip?: string | null
+          delivery_info_snapshot?: string | null
+          error_message?: string | null
+          id?: string
+          order_id: string
+          performed_by?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          customer_ip?: string | null
+          delivery_info_snapshot?: string | null
+          error_message?: string | null
+          id?: string
+          order_id?: string
+          performed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_logs: {
         Row: {
           created_at: string
@@ -153,13 +194,18 @@ export type Database = {
       }
       email_templates: {
         Row: {
+          background_color: string | null
           body_content: string | null
           body_intro: string
+          button_color: string | null
+          button_text_color: string | null
           closing_text: string
           company_logo_url: string | null
           company_name: string | null
           created_at: string
           custom_css: string | null
+          delivery_disclaimer: string | null
+          footer_background_color: string | null
           footer_text: string | null
           greeting_format: string
           header_color: string
@@ -169,6 +215,7 @@ export type Database = {
           is_active: boolean
           order_id_label: string
           order_total_label: string
+          refund_policy: string | null
           sender_email: string
           sender_name: string
           show_order_details: boolean
@@ -179,17 +226,24 @@ export type Database = {
           status_type: string
           subject_template: string
           support_email: string | null
+          support_hours: string | null
+          text_color: string | null
           tracking_button_text: string | null
           updated_at: string
         }
         Insert: {
+          background_color?: string | null
           body_content?: string | null
           body_intro: string
+          button_color?: string | null
+          button_text_color?: string | null
           closing_text?: string
           company_logo_url?: string | null
           company_name?: string | null
           created_at?: string
           custom_css?: string | null
+          delivery_disclaimer?: string | null
+          footer_background_color?: string | null
           footer_text?: string | null
           greeting_format?: string
           header_color?: string
@@ -199,6 +253,7 @@ export type Database = {
           is_active?: boolean
           order_id_label?: string
           order_total_label?: string
+          refund_policy?: string | null
           sender_email?: string
           sender_name?: string
           show_order_details?: boolean
@@ -209,17 +264,24 @@ export type Database = {
           status_type: string
           subject_template: string
           support_email?: string | null
+          support_hours?: string | null
+          text_color?: string | null
           tracking_button_text?: string | null
           updated_at?: string
         }
         Update: {
+          background_color?: string | null
           body_content?: string | null
           body_intro?: string
+          button_color?: string | null
+          button_text_color?: string | null
           closing_text?: string
           company_logo_url?: string | null
           company_name?: string | null
           created_at?: string
           custom_css?: string | null
+          delivery_disclaimer?: string | null
+          footer_background_color?: string | null
           footer_text?: string | null
           greeting_format?: string
           header_color?: string
@@ -229,6 +291,7 @@ export type Database = {
           is_active?: boolean
           order_id_label?: string
           order_total_label?: string
+          refund_policy?: string | null
           sender_email?: string
           sender_name?: string
           show_order_details?: boolean
@@ -239,6 +302,8 @@ export type Database = {
           status_type?: string
           subject_template?: string
           support_email?: string | null
+          support_hours?: string | null
+          text_color?: string | null
           tracking_button_text?: string | null
           updated_at?: string
         }
@@ -302,6 +367,12 @@ export type Database = {
           customer_email: string | null
           customer_name: string | null
           customer_phone: string | null
+          delivered_at: string | null
+          delivery_email_sent: boolean | null
+          delivery_info: string | null
+          delivery_instructions: string | null
+          delivery_platform: string | null
+          delivery_type: string | null
           id: string
           notes: string | null
           payment_method: string | null
@@ -317,6 +388,12 @@ export type Database = {
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          delivered_at?: string | null
+          delivery_email_sent?: boolean | null
+          delivery_info?: string | null
+          delivery_instructions?: string | null
+          delivery_platform?: string | null
+          delivery_type?: string | null
           id?: string
           notes?: string | null
           payment_method?: string | null
@@ -332,6 +409,12 @@ export type Database = {
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          delivered_at?: string | null
+          delivery_email_sent?: boolean | null
+          delivery_info?: string | null
+          delivery_instructions?: string | null
+          delivery_platform?: string | null
+          delivery_type?: string | null
           id?: string
           notes?: string | null
           payment_method?: string | null
