@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Golden Bumps Gaming Store - Dark Gaming Theme */
+/* Golden Bumps Gaming Store - Red & Black Gaming Theme */
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap");
@@ -10,80 +10,82 @@
 
 @layer base {
   :root {
-    /* Dark Gaming Theme - Always Dark */
-    --background: 240 4% 95%;
-    --foreground: 240 5% 10%;
+    /* Light mode - Red & Charcoal theme */
+    --background: 0 0% 96%;
+    --foreground: 0 0% 8%;
 
-    --card: 0 0% 98%;
-    --card-foreground: 240 5% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8%;
 
-    --popover: 240 5% 90%;
-    --popover-foreground: 240 5% 10%;
+    --popover: 0 0% 98%;
+    --popover-foreground: 0 0% 8%;
 
-    /* Neon Purple Primary */
-    --primary: 333 71% 50%;
-    --primary-foreground: 327 73% 97%;
+    /* Crimson Red Primary */
+    --primary: 0 85% 50%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Cyan Secondary */
-    --secondary: 240 5% 33%;
+    /* Dark Charcoal Secondary */
+    --secondary: 0 0% 15%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 240 4% 83%;
-    --muted-foreground: 240 5% 10%;
+    --muted: 0 0% 90%;
+    --muted-foreground: 0 0% 40%;
 
-    /* Neon Green Accent */
-    --accent: 355 100% 97%;
-    --accent-foreground: 349 89% 60%;
+    /* Red Accent */
+    --accent: 0 90% 95%;
+    --accent-foreground: 0 85% 45%;
 
-    --destructive: 0 72% 50%;
-    --destructive-foreground: 0 85% 97%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 240 4% 83%;
-    --input: 240 4% 83%;
-    --ring: 333 71% 50%;
+    --border: 0 0% 85%;
+    --input: 0 0% 85%;
+    --ring: 0 85% 50%;
 
-    --radius: 1.5rem;
+    --radius: 0.75rem;
 
-    /* Gaming Colors */
-    --neon-purple: 270 91% 65%;
-    --neon-cyan: 185 100% 50%;
-    --neon-green: 145 100% 50%;
-    --neon-pink: 330 100% 60%;
-    --neon-orange: 25 100% 55%;
+    /* Gaming Colors - Red & Black Theme */
+    --neon-purple: 0 85% 55%;
+    --neon-cyan: 0 0% 20%;
+    --neon-green: 120 60% 45%;
+    --neon-pink: 350 85% 55%;
+    --neon-orange: 15 90% 55%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(270 91% 65%) 0%, hsl(185 100% 50%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(230 25% 12%) 0%, hsl(230 25% 8%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(230 25% 10%) 0%, hsl(230 25% 5%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(0 85% 50%) 0%, hsl(0 0% 10%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 12%) 0%, hsl(0 0% 6%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(0 0% 8%) 0%, hsl(0 0% 4%) 100%);
 
     /* Glow effects */
-    --glow-purple: 0 0 20px hsl(270 91% 65% / 0.5);
-    --glow-cyan: 0 0 20px hsl(185 100% 50% / 0.5);
-    --glow-green: 0 0 20px hsl(145 100% 50% / 0.5);
+    --glow-purple: 0 0 20px hsl(0 85% 50% / 0.5);
+    --glow-cyan: 0 0 20px hsl(0 0% 20% / 0.5);
+    --glow-green: 0 0 20px hsl(120 60% 45% / 0.5);
 
     /* Sidebar */
-    --sidebar-background: 230 25% 10%;
-    --sidebar-foreground: 240 5% 10%;
-    --sidebar-primary: 333 71% 50%;
-    --sidebar-primary-foreground: 327 73% 97%;
-    --sidebar-accent: 240 5% 33%;
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 85% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 15%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 240 4% 83%;
-    --sidebar-ring: 333 71% 50%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 0 85% 50%;
 
     /* Success color */
-    --success: 145 100% 50%;
-    --success-foreground: 230 25% 7%;
+    --success: 120 60% 45%;
+    --success-foreground: 0 0% 100%;
 
     /* Warning color */
     --warning: 45 100% 50%;
-    --warning-foreground: 230 25% 7%;
-    --chart-1: 328 85% 70%;
-    --chart-2: 351 94% 71%;
-    --chart-3: 327 87% 81%;
-    --chart-4: 352 95% 81%;
-    --chart-5: 240 3% 46%;
-    --sidebar: 0 0% 98%;
+    --warning-foreground: 0 0% 8%;
+
+    --chart-1: 0 85% 50%;
+    --chart-2: 0 75% 60%;
+    --chart-3: 0 65% 70%;
+    --chart-4: 0 0% 30%;
+    --chart-5: 0 0% 50%;
+
+    --sidebar: 0 0% 100%;
     --font-sans: 'Poppins', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
     --font-serif: 'Merriweather', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
     --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
@@ -100,47 +102,61 @@
   }
 
   .dark {
-    /* Same as root - always dark */
-    --background: 240 5% 10%;
+    /* Dark mode - Bold Red & Black */
+    --background: 0 0% 6%;
     --foreground: 0 0% 98%;
-    --card: 240 3% 15%;
+
+    --card: 0 0% 10%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 5% 26%;
+
+    --popover: 0 0% 12%;
     --popover-foreground: 0 0% 98%;
-    --primary: 328 85% 70%;
-    --primary-foreground: 336 83% 17%;
-    --secondary: 240 3% 46%;
+
+    /* Vivid Red Primary */
+    --primary: 0 85% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Dark Secondary */
+    --secondary: 0 0% 18%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 240 3% 46%;
-    --muted-foreground: 0 0% 98%;
-    --accent: 343 87% 15%;
-    --accent-foreground: 351 94% 71%;
+
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 65%;
+
+    /* Red Accent */
+    --accent: 0 70% 15%;
+    --accent-foreground: 0 85% 65%;
+
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 85% 97%;
-    --border: 240 5% 33%;
-    --input: 240 5% 33%;
-    --ring: 328 85% 70%;
-    --chart-1: 327 87% 81%;
-    --chart-2: 352 95% 81%;
-    --chart-3: 328 85% 70%;
-    --chart-4: 351 94% 71%;
-    --chart-5: 240 5% 33%;
-    --sidebar: 240 3% 15%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 0 85% 55%;
+
+    --chart-1: 0 85% 55%;
+    --chart-2: 0 75% 65%;
+    --chart-3: 0 65% 45%;
+    --chart-4: 0 0% 40%;
+    --chart-5: 0 0% 25%;
+
+    --sidebar: 0 0% 8%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 328 85% 70%;
-    --sidebar-primary-foreground: 336 83% 17%;
-    --sidebar-accent: 351 94% 71%;
-    --sidebar-accent-foreground: 343 87% 15%;
-    --sidebar-border: 240 5% 33%;
-    --sidebar-ring: 328 85% 70%;
-    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
-    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+    --sidebar-primary: 0 85% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 70% 20%;
+    --sidebar-accent-foreground: 0 85% 75%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 0 85% 55%;
+
+    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.2);
+    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.2);
+    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(0 0% 0% / 0.2);
+    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(0 0% 0% / 0.2);
+    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 2px 4px -1px hsl(0 0% 0% / 0.2);
+    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 4px 6px -1px hsl(0 0% 0% / 0.2);
+    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 8px 10px -1px hsl(0 0% 0% / 0.2);
+    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.5);
   }
 }
 
@@ -175,8 +191,16 @@
     box-shadow: var(--glow-green);
   }
 
+  .glow-red {
+    box-shadow: 0 0 20px hsl(0 85% 55% / 0.6);
+  }
+
   .text-glow-purple {
     text-shadow: 0 0 10px hsl(var(--neon-purple) / 0.8);
+  }
+
+  .text-glow-red {
+    text-shadow: 0 0 15px hsl(0 85% 55% / 0.8);
   }
 
   .text-glow-cyan {
@@ -205,8 +229,8 @@
 
   .bg-grid-pattern {
     background-image: 
-      linear-gradient(hsl(var(--border) / 0.3) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--border) / 0.3) 1px, transparent 1px);
+      linear-gradient(hsl(0 85% 50% / 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(0 85% 50% / 0.1) 1px, transparent 1px);
     background-size: 50px 50px;
   }
 
@@ -216,10 +240,10 @@
 
   @keyframes pulse-glow {
     0%, 100% {
-      box-shadow: 0 0 20px hsl(var(--primary) / 0.4);
+      box-shadow: 0 0 20px hsl(0 85% 55% / 0.4);
     }
     50% {
-      box-shadow: 0 0 40px hsl(var(--primary) / 0.6);
+      box-shadow: 0 0 40px hsl(0 85% 55% / 0.7);
     }
   }
 
