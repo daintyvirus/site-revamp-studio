@@ -17,3 +17,12 @@ verify_jwt = false
 
 [functions.send-refund-notification]
 verify_jwt = false
+
+[functions.send-review-notification]
+verify_jwt = false
+
+[functions.send-admin-order-notification]
+verify_jwt = false
+
+[functions.digiseller-payment]
+verify_jwt = false
