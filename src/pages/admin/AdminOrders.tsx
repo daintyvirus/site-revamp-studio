@@ -235,9 +235,13 @@ export default function AdminOrders() {
         const updatedOrder = { ...selectedOrder, payment_status: paymentStatus };
         setSelectedOrder(updatedOrder);
         
-        // Send email notification when payment is verified
+        // Send email notification when payment is verified or failed
         if (paymentStatus === 'paid' || paymentStatus === 'failed') {
           await sendPaymentNotification(updatedOrder, paymentStatus);
+        }
+        // Send refund notification when payment status changes to refunded
+        if (paymentStatus === 'refunded') {
+          await sendRefundNotification(updatedOrder);
         }
       }
       toast.success(`Payment marked as ${paymentStatus}`);
