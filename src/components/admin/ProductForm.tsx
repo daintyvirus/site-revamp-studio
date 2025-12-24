@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,10 +19,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCategories, useBrands, useCreateProduct, useUpdateProduct, useCreateVariant, useUpdateVariant, useDeleteVariant } from '@/hooks/useProducts';
-import type { Product, ProductVariant } from '@/types/database';
+import type { Product, ProductVariant, ProductImage } from '@/types/database';
 import { toast } from 'sonner';
 import { Clock, Zap, CalendarIcon, Plus, Trash2, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ProductImageGallery from './ProductImageGallery';
+import { supabase } from '@/integrations/supabase/client';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -84,6 +86,41 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
       stock: v.stock,
     })) ?? []
   );
+
+  // Initialize images
+  const [images, setImages] = useState<Array<{
+    id?: string;
+    image_url: string;
+    alt_text: string;
+    sort_order: number;
+    is_primary: boolean;
+    isNew?: boolean;
+  }>>([]);
+
+  // Load images when editing
+  useEffect(() => {
+    if (product?.id) {
+      loadProductImages(product.id);
+    }
+  }, [product?.id]);
+
+  const loadProductImages = async (productId: string) => {
+    const { data, error } = await supabase
+      .from('product_images')
+      .select('*')
+      .eq('product_id', productId)
+      .order('sort_order');
+    
+    if (!error && data) {
+      setImages(data.map(img => ({
+        id: img.id,
+        image_url: img.image_url,
+        alt_text: img.alt_text || '',
+        sort_order: img.sort_order,
+        is_primary: img.is_primary,
+      })));
+    }
+  };
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -199,6 +236,10 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
   const onSubmit = async (data: ProductFormData) => {
     setIsSubmitting(true);
     try {
+      // Get primary image from gallery, or use the image_url field
+      const primaryImage = images.find(img => img.is_primary);
+      const mainImageUrl = primaryImage?.image_url || data.image_url || null;
+
       const productData = {
         name: data.name,
         slug: data.slug,
@@ -211,7 +252,7 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
         is_active: data.is_active,
         sale_price: data.sale_price || null,
         sale_price_bdt: data.sale_price_bdt || null,
-        image_url: data.image_url || null,
+        image_url: mainImageUrl,
         category_id: data.category_id || null,
         brand_id: data.brand_id || null,
         flash_sale_enabled: data.flash_sale_enabled,
@@ -226,6 +267,21 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
       } else {
         const newProduct = await createProduct.mutateAsync(productData);
         productId = newProduct.id;
+
+        // Save new images for new product
+        if (productId && images.length > 0) {
+          for (const img of images) {
+            if (img.isNew) {
+              await supabase.from('product_images').insert({
+                product_id: productId,
+                image_url: img.image_url,
+                alt_text: img.alt_text,
+                sort_order: img.sort_order,
+                is_primary: img.is_primary,
+              });
+            }
+          }
+        }
       }
 
       // Save variants
@@ -341,6 +397,13 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Product Images Gallery */}
+      <ProductImageGallery
+        productId={product?.id}
+        images={images}
+        onChange={setImages}
+      />
 
       {/* Variants Section */}
       <Card className="border-accent/30">

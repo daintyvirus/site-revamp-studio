@@ -31,6 +31,7 @@ export interface Product {
   category_id: string | null;
   brand_id: string | null;
   stock: number;
+  low_stock_threshold: number | null;
   is_featured: boolean;
   is_active: boolean;
   flash_sale_enabled: boolean;
@@ -44,6 +45,17 @@ export interface Product {
   category?: Category;
   brand?: Brand;
   variants?: ProductVariant[];
+  images?: ProductImage[];
+}
+
+export interface ProductImage {
+  id: string;
+  product_id: string;
+  image_url: string;
+  alt_text: string | null;
+  sort_order: number;
+  is_primary: boolean;
+  created_at: string;
 }
 
 export interface ProductVariant {
