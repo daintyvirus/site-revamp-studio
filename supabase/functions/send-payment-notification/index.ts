@@ -35,6 +35,8 @@ serve(async (req: Request): Promise<Response> => {
 
     const hostingerEmail = Deno.env.get("HOSTINGER_EMAIL");
     const hostingerPassword = Deno.env.get("HOSTINGER_EMAIL_PASSWORD");
+    // Use alias for sending, authenticate with main email
+    const senderEmail = "paymentverify@goldenbumps.com";
 
     if (!hostingerEmail || !hostingerPassword) {
       console.error("Hostinger email credentials not configured");
@@ -109,7 +111,7 @@ serve(async (req: Request): Promise<Response> => {
     `;
 
     await client.send({
-      from: `Golden Bumps <${hostingerEmail}>`,
+      from: `Golden Bumps Payment <${senderEmail}>`,
       to: customerEmail,
       subject: `Payment ${paymentStatus === "paid" ? "Confirmed" : paymentStatus === "failed" ? "Failed" : "Update"} - Order #${orderId.slice(0, 8).toUpperCase()}`,
       content: statusMessage,
@@ -117,6 +119,7 @@ serve(async (req: Request): Promise<Response> => {
       headers: {
         "X-Priority": "1",
         "X-Mailer": "Golden Bumps Store",
+        "Reply-To": senderEmail,
       },
     });
 
