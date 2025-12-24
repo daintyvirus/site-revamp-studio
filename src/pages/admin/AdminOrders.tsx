@@ -36,6 +36,7 @@ const statusColors: Record<string, 'default' | 'secondary' | 'destructive'> = {
   shipped: 'default',
   completed: 'default',
   cancelled: 'destructive',
+  refunded: 'secondary',
 };
 
 const paymentStatusColors: Record<string, string> = {
@@ -108,6 +109,62 @@ export default function AdminOrders() {
     }
   };
 
+  const sendCancellationNotification = async (order: Order) => {
+    if (!order.customer_email) {
+      console.log('No customer email, skipping cancellation notification');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('send-cancellation-notification', {
+        body: {
+          customerEmail: order.customer_email,
+          customerName: order.customer_name || 'Valued Customer',
+          orderId: order.id,
+          orderTotal: order.total,
+        },
+      });
+
+      if (error) {
+        console.error('Error sending cancellation notification:', error);
+        toast.error('Failed to send cancellation notification');
+      } else {
+        console.log('Cancellation notification sent:', data);
+        toast.success('Cancellation notification sent to customer');
+      }
+    } catch (error) {
+      console.error('Error invoking cancellation notification function:', error);
+    }
+  };
+
+  const sendRefundNotification = async (order: Order) => {
+    if (!order.customer_email) {
+      console.log('No customer email, skipping refund notification');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('send-refund-notification', {
+        body: {
+          customerEmail: order.customer_email,
+          customerName: order.customer_name || 'Valued Customer',
+          orderId: order.id,
+          orderTotal: order.total,
+        },
+      });
+
+      if (error) {
+        console.error('Error sending refund notification:', error);
+        toast.error('Failed to send refund notification');
+      } else {
+        console.log('Refund notification sent:', data);
+        toast.success('Refund notification sent to customer');
+      }
+    } catch (error) {
+      console.error('Error invoking refund notification function:', error);
+    }
+  };
+
   const handleStatusChange = async (orderId: string, status: string) => {
     try {
       await updateStatus.mutateAsync({ orderId, status });
@@ -121,6 +178,14 @@ export default function AdminOrders() {
         // Send delivery notification when status changes to completed
         if (status === 'completed') {
           await sendDeliveryNotification(order);
+        }
+        // Send cancellation notification when status changes to cancelled
+        if (status === 'cancelled') {
+          await sendCancellationNotification(order);
+        }
+        // Send refund notification when status changes to refunded
+        if (status === 'refunded') {
+          await sendRefundNotification(order);
         }
       }
       
@@ -241,6 +306,7 @@ export default function AdminOrders() {
                           <SelectItem value="shipped">Shipped</SelectItem>
                           <SelectItem value="completed">Completed</SelectItem>
                           <SelectItem value="cancelled">Cancelled</SelectItem>
+                          <SelectItem value="refunded">Refunded</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
