@@ -144,6 +144,13 @@ serve(async (req: Request): Promise<Response> => {
               </tbody>
             </table>
 
+            <!-- Track Order Button -->
+            <div style="text-align: center; margin: 25px 0;">
+              <a href="https://goldenbumps.com/track-order?id=${orderId.slice(0, 8)}" class="cta" style="display: inline-block; background: linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%); color: #1a1a1a; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+                📦 Track Your Order
+              </a>
+            </div>
+
             <div style="background: #FEF3C7; padding: 15px; border-radius: 8px; margin-top: 20px;">
               <p style="margin: 0; color: #92400E;"><strong>⏳ What's Next?</strong></p>
               <p style="margin: 8px 0 0 0; color: #92400E;">Our team will verify your payment shortly. Once verified, you'll receive another email confirming your payment status.</p>
