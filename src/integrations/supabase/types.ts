@@ -752,6 +752,48 @@ export type Database = {
         }
         Relationships: []
       }
+      promotional_banners: {
+        Row: {
+          background_color: string | null
+          created_at: string
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          link_url: string | null
+          sort_order: number
+          starts_at: string | null
+          text: string
+          text_color: string | null
+          updated_at: string
+        }
+        Insert: {
+          background_color?: string | null
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          link_url?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          text: string
+          text_color?: string | null
+          updated_at?: string
+        }
+        Update: {
+          background_color?: string | null
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          link_url?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          text?: string
+          text_color?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           category: string
@@ -786,6 +828,48 @@ export type Database = {
           setting_key?: string
           setting_type?: string
           setting_value?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      testimonials: {
+        Row: {
+          created_at: string
+          customer_avatar: string | null
+          customer_name: string
+          id: string
+          is_active: boolean
+          is_featured: boolean
+          product_name: string | null
+          rating: number
+          review_text: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_avatar?: string | null
+          customer_name: string
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          product_name?: string | null
+          rating?: number
+          review_text: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_avatar?: string | null
+          customer_name?: string
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          product_name?: string | null
+          rating?: number
+          review_text?: string
           sort_order?: number
           updated_at?: string
         }
