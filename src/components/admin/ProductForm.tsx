@@ -2,12 +2,15 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -18,7 +21,8 @@ import {
 import { useCategories, useBrands, useCreateProduct, useUpdateProduct } from '@/hooks/useProducts';
 import type { Product } from '@/types/database';
 import { toast } from 'sonner';
-import { Clock, Zap } from 'lucide-react';
+import { Clock, Zap, CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -68,12 +72,61 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
       is_featured: product?.is_featured ?? false,
       is_active: product?.is_active ?? true,
       flash_sale_enabled: product?.flash_sale_enabled ?? false,
-      sale_start_date: product?.sale_start_date ? product.sale_start_date.slice(0, 16) : '',
-      sale_end_date: product?.sale_end_date ? product.sale_end_date.slice(0, 16) : '',
+      sale_start_date: product?.sale_start_date ?? null,
+      sale_end_date: product?.sale_end_date ?? null,
     },
   });
 
   const flashSaleEnabled = watch('flash_sale_enabled');
+  const saleStartDate = watch('sale_start_date');
+  const saleEndDate = watch('sale_end_date');
+  
+  const [startTime, setStartTime] = useState(
+    product?.sale_start_date ? format(new Date(product.sale_start_date), 'HH:mm') : '00:00'
+  );
+  const [endTime, setEndTime] = useState(
+    product?.sale_end_date ? format(new Date(product.sale_end_date), 'HH:mm') : '23:59'
+  );
+
+  const handleStartDateSelect = (date: Date | undefined) => {
+    if (date) {
+      const [hours, minutes] = startTime.split(':').map(Number);
+      date.setHours(hours, minutes, 0, 0);
+      setValue('sale_start_date', date.toISOString());
+    } else {
+      setValue('sale_start_date', null);
+    }
+  };
+
+  const handleEndDateSelect = (date: Date | undefined) => {
+    if (date) {
+      const [hours, minutes] = endTime.split(':').map(Number);
+      date.setHours(hours, minutes, 0, 0);
+      setValue('sale_end_date', date.toISOString());
+    } else {
+      setValue('sale_end_date', null);
+    }
+  };
+
+  const handleStartTimeChange = (time: string) => {
+    setStartTime(time);
+    if (saleStartDate) {
+      const date = new Date(saleStartDate);
+      const [hours, minutes] = time.split(':').map(Number);
+      date.setHours(hours, minutes, 0, 0);
+      setValue('sale_start_date', date.toISOString());
+    }
+  };
+
+  const handleEndTimeChange = (time: string) => {
+    setEndTime(time);
+    if (saleEndDate) {
+      const date = new Date(saleEndDate);
+      const [hours, minutes] = time.split(':').map(Number);
+      date.setHours(hours, minutes, 0, 0);
+      setValue('sale_end_date', date.toISOString());
+    }
+  };
 
   const generateSlug = (name: string) => {
     return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -183,26 +236,82 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
         {flashSaleEnabled && (
           <CardContent className="space-y-4 pt-0">
             <div className="grid grid-cols-2 gap-4">
+              {/* Start Date */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
                   Sale Start Date
                 </Label>
-                <Input
-                  type="datetime-local"
-                  {...register('sale_start_date')}
-                />
+                <div className="flex gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "flex-1 justify-start text-left font-normal",
+                          !saleStartDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {saleStartDate ? format(new Date(saleStartDate), "PPP") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={saleStartDate ? new Date(saleStartDate) : undefined}
+                        onSelect={handleStartDateSelect}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <Input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => handleStartTimeChange(e.target.value)}
+                    className="w-28"
+                  />
+                </div>
               </div>
+              
+              {/* End Date */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
                   Sale End Date *
                 </Label>
-                <Input
-                  type="datetime-local"
-                  {...register('sale_end_date')}
-                  required={flashSaleEnabled}
-                />
+                <div className="flex gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "flex-1 justify-start text-left font-normal",
+                          !saleEndDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {saleEndDate ? format(new Date(saleEndDate), "PPP") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={saleEndDate ? new Date(saleEndDate) : undefined}
+                        onSelect={handleEndDateSelect}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <Input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => handleEndTimeChange(e.target.value)}
+                    className="w-28"
+                  />
+                </div>
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
