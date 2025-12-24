@@ -38,7 +38,8 @@ const emptyForm = {
   logo_url: '',
   instructions: '',
   is_active: true,
-  sort_order: 0
+  sort_order: 0,
+  available_currencies: ['BDT', 'USD'] as string[]
 };
 
 export default function AdminPaymentMethods() {
@@ -68,7 +69,8 @@ export default function AdminPaymentMethods() {
       logo_url: method.logo_url || '',
       instructions: method.instructions || '',
       is_active: method.is_active,
-      sort_order: method.sort_order
+      sort_order: method.sort_order,
+      available_currencies: method.available_currencies || ['BDT', 'USD']
     });
     setDialogOpen(true);
   };
@@ -260,6 +262,42 @@ export default function AdminPaymentMethods() {
                 onChange={(e) => setForm({ ...form, instructions: e.target.value })}
                 rows={3}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Available Currencies</Label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.available_currencies.includes('BDT')}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setForm({ ...form, available_currencies: [...form.available_currencies, 'BDT'] });
+                      } else {
+                        setForm({ ...form, available_currencies: form.available_currencies.filter(c => c !== 'BDT') });
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-border"
+                  />
+                  <span className="text-sm">BDT (৳)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.available_currencies.includes('USD')}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setForm({ ...form, available_currencies: [...form.available_currencies, 'USD'] });
+                      } else {
+                        setForm({ ...form, available_currencies: form.available_currencies.filter(c => c !== 'USD') });
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-border"
+                  />
+                  <span className="text-sm">USD ($)</span>
+                </label>
+              </div>
             </div>
 
             <div className="flex items-center gap-3">

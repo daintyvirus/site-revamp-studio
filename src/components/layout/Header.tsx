@@ -16,6 +16,7 @@ import { useWishlist } from '@/hooks/useWishlist';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useNavigationMenu } from '@/hooks/useNavigationMenu';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import CurrencyToggle from '@/components/CurrencyToggle';
 import { cn } from '@/lib/utils';
 
 export default function Header() {
@@ -87,7 +88,11 @@ export default function Header() {
           </form>
 
           {/* Actions */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 sm:gap-2">
+            {/* Currency Toggle */}
+            <div className="hidden sm:block">
+              <CurrencyToggle />
+            </div>
             {/* Theme Toggle */}
             <ThemeToggle />
             {/* Wishlist */}
