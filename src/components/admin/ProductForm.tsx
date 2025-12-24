@@ -18,10 +18,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useCategories, useBrands, useCreateProduct, useUpdateProduct } from '@/hooks/useProducts';
-import type { Product } from '@/types/database';
+import { useCategories, useBrands, useCreateProduct, useUpdateProduct, useCreateVariant, useUpdateVariant, useDeleteVariant } from '@/hooks/useProducts';
+import type { Product, ProductVariant } from '@/types/database';
 import { toast } from 'sonner';
-import { Clock, Zap, CalendarIcon } from 'lucide-react';
+import { Clock, Zap, CalendarIcon, Plus, Trash2, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const productSchema = z.object({
@@ -46,6 +46,17 @@ const productSchema = z.object({
 
 type ProductFormData = z.infer<typeof productSchema>;
 
+interface VariantFormData {
+  id?: string;
+  name: string;
+  price: number;
+  price_bdt: number;
+  sale_price: number | null;
+  sale_price_bdt: number | null;
+  stock: number;
+  isNew?: boolean;
+}
+
 interface ProductFormProps {
   product?: Product | null;
   onSuccess: () => void;
@@ -56,7 +67,23 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
   const { data: brands } = useBrands();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
+  const createVariant = useCreateVariant();
+  const updateVariant = useUpdateVariant();
+  const deleteVariant = useDeleteVariant();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Initialize variants from product
+  const [variants, setVariants] = useState<VariantFormData[]>(
+    product?.variants?.map(v => ({
+      id: v.id,
+      name: v.name,
+      price: v.price,
+      price_bdt: v.price_bdt ?? 0,
+      sale_price: v.sale_price,
+      sale_price_bdt: v.sale_price_bdt,
+      stock: v.stock,
+    })) ?? []
+  );
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -136,6 +163,39 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
     return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   };
 
+  // Variant management
+  const addVariant = () => {
+    setVariants([...variants, {
+      name: '',
+      price: 0,
+      price_bdt: 0,
+      sale_price: null,
+      sale_price_bdt: null,
+      stock: 0,
+      isNew: true,
+    }]);
+  };
+
+  const updateVariantField = (index: number, field: keyof VariantFormData, value: any) => {
+    const updated = [...variants];
+    updated[index] = { ...updated[index], [field]: value };
+    setVariants(updated);
+  };
+
+  const removeVariant = async (index: number) => {
+    const variant = variants[index];
+    if (variant.id && !variant.isNew) {
+      try {
+        await deleteVariant.mutateAsync(variant.id);
+        toast.success('Variant deleted');
+      } catch (error) {
+        toast.error('Failed to delete variant');
+        return;
+      }
+    }
+    setVariants(variants.filter((_, i) => i !== index));
+  };
+
   const onSubmit = async (data: ProductFormData) => {
     setIsSubmitting(true);
     try {
@@ -159,13 +219,39 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
         sale_end_date: data.sale_end_date ? new Date(data.sale_end_date).toISOString() : null,
       };
 
+      let productId = product?.id;
+
       if (product) {
         await updateProduct.mutateAsync({ id: product.id, ...productData });
-        toast.success('Product updated');
       } else {
-        await createProduct.mutateAsync(productData);
-        toast.success('Product created');
+        const newProduct = await createProduct.mutateAsync(productData);
+        productId = newProduct.id;
       }
+
+      // Save variants
+      if (productId) {
+        for (const variant of variants) {
+          if (!variant.name.trim()) continue;
+          
+          const variantData = {
+            product_id: productId,
+            name: variant.name,
+            price: variant.price,
+            price_bdt: variant.price_bdt,
+            sale_price: variant.sale_price || null,
+            sale_price_bdt: variant.sale_price_bdt || null,
+            stock: variant.stock,
+          };
+
+          if (variant.id && !variant.isNew) {
+            await updateVariant.mutateAsync({ id: variant.id, ...variantData });
+          } else if (variant.isNew || !variant.id) {
+            await createVariant.mutateAsync(variantData);
+          }
+        }
+      }
+
+      toast.success(product ? 'Product updated' : 'Product created');
       onSuccess();
     } catch (error: any) {
       toast.error(error.message || 'Failed to save product');
@@ -253,6 +339,131 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
               <Input id="sale_price" type="number" step="0.01" {...register('sale_price')} />
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Variants Section */}
+      <Card className="border-accent/30">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-accent" />
+              <CardTitle className="text-base">Product Variants</CardTitle>
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={addVariant}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Variant
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Add different options with individual BDT and USD pricing
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {variants.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground border border-dashed rounded-lg">
+              <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No variants added yet</p>
+              <p className="text-xs">Click "Add Variant" to create product options</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {variants.map((variant, index) => (
+                <div key={index} className="p-4 bg-muted/30 rounded-lg border border-border/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Variant {index + 1}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeVariant(index)}
+                      className="text-destructive hover:text-destructive h-8 w-8 p-0"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <Label className="text-xs">Variant Name *</Label>
+                      <Input
+                        value={variant.name}
+                        onChange={(e) => updateVariantField(index, 'name', e.target.value)}
+                        placeholder="e.g., Small, Medium, Large"
+                        className="h-9"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs flex items-center gap-1">
+                        <span>৳</span> BDT Price *
+                      </Label>
+                      <Input
+                        type="number"
+                        step="1"
+                        value={variant.price_bdt}
+                        onChange={(e) => updateVariantField(index, 'price_bdt', Number(e.target.value))}
+                        className="h-9"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs flex items-center gap-1">
+                        <span>$</span> USD Price *
+                      </Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={variant.price}
+                        onChange={(e) => updateVariantField(index, 'price', Number(e.target.value))}
+                        className="h-9"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs flex items-center gap-1">
+                        <span>৳</span> Sale Price (BDT)
+                      </Label>
+                      <Input
+                        type="number"
+                        step="1"
+                        value={variant.sale_price_bdt ?? ''}
+                        onChange={(e) => updateVariantField(index, 'sale_price_bdt', e.target.value ? Number(e.target.value) : null)}
+                        className="h-9"
+                        placeholder="Optional"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs flex items-center gap-1">
+                        <span>$</span> Sale Price (USD)
+                      </Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={variant.sale_price ?? ''}
+                        onChange={(e) => updateVariantField(index, 'sale_price', e.target.value ? Number(e.target.value) : null)}
+                        className="h-9"
+                        placeholder="Optional"
+                      />
+                    </div>
+
+                    <div className="col-span-2">
+                      <Label className="text-xs">Stock *</Label>
+                      <Input
+                        type="number"
+                        value={variant.stock}
+                        onChange={(e) => updateVariantField(index, 'stock', Number(e.target.value))}
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

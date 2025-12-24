@@ -104,11 +104,87 @@ export function useAdminProducts() {
         .select(`
           *,
           category:categories(*),
-          brand:brands(*)
+          brand:brands(*),
+          variants:product_variants(*)
         `)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data as Product[];
+    }
+  });
+}
+
+export function useCreateVariant() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (variant: {
+      product_id: string;
+      name: string;
+      price: number;
+      price_bdt: number;
+      sale_price?: number | null;
+      sale_price_bdt?: number | null;
+      stock: number;
+    }) => {
+      const { data, error } = await supabase
+        .from('product_variants')
+        .insert(variant)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+    }
+  });
+}
+
+export function useUpdateVariant() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...variant }: {
+      id: string;
+      name?: string;
+      price?: number;
+      price_bdt?: number;
+      sale_price?: number | null;
+      sale_price_bdt?: number | null;
+      stock?: number;
+    }) => {
+      const { data, error } = await supabase
+        .from('product_variants')
+        .update(variant)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+    }
+  });
+}
+
+export function useDeleteVariant() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('product_variants')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
     }
   });
 }
