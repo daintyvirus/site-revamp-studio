@@ -64,18 +64,23 @@ export default function ProductCard({ product }: ProductCardProps) {
           {/* Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-2">
             {hasDiscount && (
-              <Badge variant="destructive" className="font-display animate-bounce-in shadow-lg shadow-destructive/30">
-                -{discountPercent}%
+              <Badge variant="destructive" className="font-display animate-bounce-in shadow-lg shadow-destructive/30 bg-destructive text-destructive-foreground">
+                <span className="mr-1">Sale!</span> -{discountPercent}%
               </Badge>
             )}
             {product.is_featured && (
               <Badge className="bg-primary font-display shadow-lg shadow-primary/30 animate-bounce-in" style={{ animationDelay: '0.1s' }}>
-                Featured
+                ⭐ Featured
               </Badge>
             )}
             {product.stock <= 0 && (
               <Badge variant="secondary" className="font-display">
                 Out of Stock
+              </Badge>
+            )}
+            {product.stock > 0 && product.stock <= 5 && (
+              <Badge variant="outline" className="font-display bg-warning/20 text-warning border-warning/50">
+                Only {product.stock} left!
               </Badge>
             )}
           </div>
