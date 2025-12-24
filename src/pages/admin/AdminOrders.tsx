@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Eye, CheckCircle, XCircle, Clock, Loader2, Package } from 'lucide-react';
+import { Eye, CheckCircle, XCircle, Clock, Loader2, Package, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { generateInvoicePDF } from '@/lib/generateInvoice';
 import {
   Table,
   TableBody,
@@ -328,6 +329,9 @@ export default function AdminOrders() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => generateInvoicePDF(order)} title="Download Invoice">
+                          <Download className="h-4 w-4" />
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => setDeliveryOrder(order)} title="Manage Delivery">
                           <Package className="h-4 w-4" />
                         </Button>
@@ -480,6 +484,18 @@ export default function AdminOrders() {
                     Email notification will be sent to {selectedOrder.customer_email}
                   </p>
                 )}
+              </div>
+
+              {/* Invoice Download */}
+              <div className="border-t border-border pt-4">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => generateInvoicePDF(selectedOrder)}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Invoice PDF
+                </Button>
               </div>
             </div>
           )}

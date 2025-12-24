@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Package, ShoppingBag, Gift, ChevronDown, ChevronUp, CreditCard, Clock, CheckCircle, XCircle, Eye } from 'lucide-react';
+import { Package, ShoppingBag, Gift, ChevronDown, ChevronUp, CreditCard, Clock, CheckCircle, XCircle, Eye, Download } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
+import { generateInvoicePDF } from '@/lib/generateInvoice';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -158,6 +159,14 @@ export default function Orders() {
                         </p>
                       </div>
                       <div className="flex gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => generateInvoicePDF(order)}
+                          title="Download Invoice"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => setViewingOrder(order)}>
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -349,15 +358,25 @@ export default function Orders() {
                 </span>
               </div>
 
-              {/* Delivery */}
-              {(viewingOrder as any).delivery_info && viewingOrder.status === 'completed' && (
-                <Button asChild className="w-full">
-                  <Link to={`/orders/${viewingOrder.id}/delivery`}>
-                    <Gift className="h-4 w-4 mr-2" />
-                    View Delivery Details
-                  </Link>
+              {/* Actions */}
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => generateInvoicePDF(viewingOrder)}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Invoice
                 </Button>
-              )}
+                {(viewingOrder as any).delivery_info && viewingOrder.status === 'completed' && (
+                  <Button asChild className="flex-1">
+                    <Link to={`/orders/${viewingOrder.id}/delivery`}>
+                      <Gift className="h-4 w-4 mr-2" />
+                      View Delivery
+                    </Link>
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
