@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { useCheckout } from '@/hooks/useCheckout';
+import { useActivePaymentMethods } from '@/hooks/usePaymentMethods';
 import CustomerInfoForm from '@/components/checkout/CustomerInfoForm';
-import PaymentMethodSelector, { type PaymentMethod } from '@/components/checkout/PaymentMethodSelector';
+import PaymentMethodSelector from '@/components/checkout/PaymentMethodSelector';
 import PaymentInstructions from '@/components/checkout/PaymentInstructions';
 
 const STORE_NAME = 'GameStore';
@@ -17,13 +18,16 @@ type Step = 'info' | 'method' | 'payment';
 export default function Checkout() {
   const { user } = useAuth();
   const { data: cart, isLoading } = useCart();
+  const { data: paymentMethods, isLoading: methodsLoading } = useActivePaymentMethods();
   const checkout = useCheckout();
   const navigate = useNavigate();
   
   const [step, setStep] = useState<Step>('info');
   const [customerInfo, setCustomerInfo] = useState({ name: '', email: '', phone: '' });
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [selectedMethodSlug, setSelectedMethodSlug] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState('');
+
+  const selectedMethod = paymentMethods?.find(m => m.slug === selectedMethodSlug);
 
   const total = cart?.reduce((sum, item) => {
     const price = item.product?.sale_price || item.product?.price || 0;
@@ -48,7 +52,7 @@ export default function Checkout() {
     );
   }
 
-  if (isLoading) {
+  if (isLoading || methodsLoading) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-20 text-center">
@@ -74,16 +78,16 @@ export default function Checkout() {
   }
 
   const canProceedFromInfo = customerInfo.name && customerInfo.email && customerInfo.phone;
-  const canProceedFromMethod = paymentMethod !== null;
+  const canProceedFromMethod = selectedMethodSlug !== null;
   const canSubmit = transactionId.trim().length > 0;
 
   const handleSubmit = async () => {
-    if (!paymentMethod) return;
+    if (!selectedMethodSlug) return;
     
     try {
       await checkout.mutateAsync({
         customerInfo,
-        paymentMethod,
+        paymentMethod: selectedMethodSlug,
         transactionId: transactionId.trim()
       });
       navigate('/orders');
@@ -166,9 +170,13 @@ export default function Checkout() {
                 )}
 
                 {/* Step: Payment Method */}
-                {step === 'method' && (
+                {step === 'method' && paymentMethods && (
                   <div className="space-y-6">
-                    <PaymentMethodSelector selected={paymentMethod} onSelect={setPaymentMethod} />
+                    <PaymentMethodSelector 
+                      methods={paymentMethods} 
+                      selected={selectedMethodSlug} 
+                      onSelect={setSelectedMethodSlug} 
+                    />
                     
                     <div className="flex gap-3">
                       <Button variant="outline" onClick={() => setStep('info')} className="flex-1">
@@ -187,7 +195,7 @@ export default function Checkout() {
                 )}
 
                 {/* Step: Payment Instructions */}
-                {step === 'payment' && paymentMethod && (
+                {step === 'payment' && selectedMethod && (
                   <div className="space-y-6">
                     <Button variant="ghost" onClick={() => setStep('method')} className="mb-2">
                       <ArrowLeft className="h-4 w-4 mr-2" />
@@ -195,7 +203,7 @@ export default function Checkout() {
                     </Button>
                     
                     <PaymentInstructions
-                      method={paymentMethod}
+                      method={selectedMethod}
                       amount={totalBDT}
                       transactionId={transactionId}
                       onTransactionIdChange={setTransactionId}

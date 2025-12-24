@@ -3,7 +3,7 @@ import { Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { PaymentMethod } from './PaymentMethodSelector';
+import type { PaymentMethod } from '@/hooks/usePaymentMethods';
 
 interface PaymentInstructionsProps {
   method: PaymentMethod;
@@ -12,13 +12,6 @@ interface PaymentInstructionsProps {
   onTransactionIdChange: (value: string) => void;
   storeName: string;
 }
-
-const methodConfig: Record<PaymentMethod, { name: string; color: string; number: string }> = {
-  bkash: { name: 'bKash', color: '#E2136E', number: '01XXXXXXXXX' },
-  nagad: { name: 'Nagad', color: '#F6921E', number: '01XXXXXXXXX' },
-  rocket: { name: 'Rocket', color: '#8C3494', number: '01XXXXXXXXX' },
-  upay: { name: 'Upay', color: '#00A651', number: '01XXXXXXXXX' },
-};
 
 export default function PaymentInstructions({
   method,
@@ -29,8 +22,6 @@ export default function PaymentInstructions({
 }: PaymentInstructionsProps) {
   const [copiedNumber, setCopiedNumber] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
-  
-  const config = methodConfig[method];
 
   const copyToClipboard = (text: string, type: 'number' | 'amount') => {
     navigator.clipboard.writeText(text);
@@ -47,12 +38,12 @@ export default function PaymentInstructions({
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <div 
-          className="inline-flex items-center gap-2 text-2xl font-bold"
-          style={{ color: config.color }}
-        >
-          {config.name}
-          <span className="text-3xl">💳</span>
+        <div className="inline-flex items-center gap-3">
+          {method.logo_url ? (
+            <img src={method.logo_url} alt={method.name} className="h-10 w-auto" />
+          ) : (
+            <span className="text-2xl font-bold text-primary">{method.name}</span>
+          )}
         </div>
       </div>
 
@@ -70,25 +61,25 @@ export default function PaymentInstructions({
       {/* Instructions */}
       <div className="bg-card border rounded-xl p-6 space-y-4">
         <div className="flex items-start gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-600 mt-2"></span>
-          <p>Go to your <strong>{config.name}</strong> Mobile App.</p>
+          <span className="w-2 h-2 rounded-full bg-blue-600 mt-2 flex-shrink-0"></span>
+          <p>Go to your <strong>{method.name.split(' ')[0]}</strong> Mobile App.</p>
         </div>
         
         <div className="flex items-start gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-600 mt-2"></span>
+          <span className="w-2 h-2 rounded-full bg-blue-600 mt-2 flex-shrink-0"></span>
           <p>Choose: <strong>Send Money</strong></p>
         </div>
         
         <div className="flex items-start gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-600 mt-2"></span>
+          <span className="w-2 h-2 rounded-full bg-blue-600 mt-2 flex-shrink-0"></span>
           <div className="flex items-center gap-2 flex-wrap">
             <span>Enter the Number:</span>
-            <strong>{config.number}</strong>
+            <strong>{method.account_number}</strong>
             <Button
               size="sm"
               variant="outline"
               className="h-7 text-xs bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
-              onClick={() => copyToClipboard(config.number, 'number')}
+              onClick={() => copyToClipboard(method.account_number, 'number')}
             >
               {copiedNumber ? <Check className="h-3 w-3 mr-1" /> : <Copy className="h-3 w-3 mr-1" />}
               Copy
@@ -97,7 +88,7 @@ export default function PaymentInstructions({
         </div>
         
         <div className="flex items-start gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-600 mt-2"></span>
+          <span className="w-2 h-2 rounded-full bg-blue-600 mt-2 flex-shrink-0"></span>
           <div className="flex items-center gap-2 flex-wrap">
             <span>Enter the Amount:</span>
             <strong>{amount.toFixed(0)} BDT</strong>
@@ -114,12 +105,12 @@ export default function PaymentInstructions({
         </div>
         
         <div className="flex items-start gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-600 mt-2"></span>
-          <p>Now enter your <strong>{config.name}</strong> PIN to confirm.</p>
+          <span className="w-2 h-2 rounded-full bg-blue-600 mt-2 flex-shrink-0"></span>
+          <p>Now enter your <strong>{method.name.split(' ')[0]}</strong> PIN to confirm.</p>
         </div>
         
         <div className="flex items-start gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-600 mt-2"></span>
+          <span className="w-2 h-2 rounded-full bg-blue-600 mt-2 flex-shrink-0"></span>
           <p>Put the <strong>Transaction ID</strong> in the box below and press <strong>Verify</strong></p>
         </div>
       </div>
