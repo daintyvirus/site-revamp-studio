@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingCart, Zap, Clock } from 'lucide-react';
+import { Heart, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAddToCart } from '@/hooks/useCart';
@@ -51,9 +51,8 @@ function CountdownDisplay({ endDate }: CountdownDisplayProps) {
   if (isExpired) return null;
 
   return (
-    <div className="flex items-center gap-1 text-xs font-mono">
-      <Clock className="h-3 w-3" />
-      <span className="bg-destructive/20 text-destructive px-1 rounded font-bold">
+    <div className="flex items-center gap-1 text-xs font-mono text-destructive">
+      <span className="font-medium">
         {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
       </span>
     </div>
@@ -66,7 +65,6 @@ export default function ProductCard({ product }: ProductCardProps) {
   const toggleWishlist = useToggleWishlist();
   const isInWishlist = useIsInWishlist(product.id);
 
-  // Check if flash sale is active
   const now = new Date();
   const saleStartDate = product.sale_start_date ? new Date(product.sale_start_date) : null;
   const saleEndDate = product.sale_end_date ? new Date(product.sale_end_date) : null;
@@ -97,55 +95,36 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Link to={`/product/${product.slug}`} className="group block">
-      <div className="relative overflow-hidden rounded-xl bg-card border border-border transition-all duration-500 hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/20 hover-lift card-3d">
-        {/* Animated Border Gradient */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-destructive/20 to-primary/20 animate-gradient-shift" style={{ backgroundSize: '200% 100%' }} />
-        </div>
-        
+      <div className="relative overflow-hidden rounded-lg bg-card border border-border/50 transition-all duration-300 hover:border-border hover:shadow-card-hover">
         {/* Image */}
-        <div className="relative aspect-square overflow-hidden bg-muted">
+        <div className="relative aspect-[4/3] overflow-hidden bg-secondary/30">
           {product.image_url ? (
             <img
               src={product.image_url}
               alt={product.name}
-              className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-              <Zap className="h-16 w-16 text-muted-foreground/30 group-hover:text-primary/50 transition-colors duration-300" />
+            <div className="flex h-full w-full items-center justify-center">
+              <span className="text-4xl text-muted-foreground/30">🎮</span>
             </div>
           )}
-          
-          {/* Overlay Gradient on Hover */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
           {/* Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-2">
             {isFlashSaleActive && (
-              <Badge variant="destructive" className="font-display animate-pulse shadow-lg shadow-destructive/30 bg-gradient-to-r from-destructive to-orange-500 text-white">
-                <Zap className="h-3 w-3 mr-1" />
-                Flash Sale! -{discountPercent}%
+              <Badge variant="destructive" className="text-xs">
+                Sale -{discountPercent}%
               </Badge>
             )}
             {!isFlashSaleActive && hasDiscount && (
-              <Badge variant="destructive" className="font-display animate-bounce-in shadow-lg shadow-destructive/30 bg-destructive text-destructive-foreground">
-                <span className="mr-1">Sale!</span> -{discountPercent}%
-              </Badge>
-            )}
-            {product.is_featured && (
-              <Badge className="bg-primary font-display shadow-lg shadow-primary/30 animate-bounce-in" style={{ animationDelay: '0.1s' }}>
-                ⭐ Featured
+              <Badge variant="destructive" className="text-xs">
+                -{discountPercent}%
               </Badge>
             )}
             {product.stock <= 0 && (
-              <Badge variant="secondary" className="font-display">
+              <Badge variant="secondary" className="text-xs">
                 Out of Stock
-              </Badge>
-            )}
-            {product.stock > 0 && product.stock <= 5 && (
-              <Badge variant="outline" className="font-display bg-warning/20 text-warning border-warning/50">
-                Only {product.stock} left!
               </Badge>
             )}
           </div>
@@ -156,81 +135,65 @@ export default function ProductCard({ product }: ProductCardProps) {
               variant="secondary"
               size="icon"
               className={cn(
-                'absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 backdrop-blur-sm bg-background/80 hover:bg-primary hover:text-primary-foreground',
-                isInWishlist && 'opacity-100 translate-y-0'
+                'absolute top-3 right-3 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-background/90 hover:bg-background',
+                isInWishlist && 'opacity-100'
               )}
               onClick={handleToggleWishlist}
               disabled={toggleWishlist.isPending}
             >
               <Heart className={cn(
-                'h-4 w-4 transition-all duration-300',
-                isInWishlist && 'fill-current text-destructive scale-110',
-                toggleWishlist.isPending && 'animate-pulse'
+                'h-4 w-4',
+                isInWishlist && 'fill-destructive text-destructive'
               )} />
             </Button>
           )}
 
           {/* Quick Add */}
           {product.stock > 0 && user && (
-            <div className="absolute inset-x-3 bottom-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0">
+            <div className="absolute inset-x-3 bottom-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
               <Button
                 onClick={handleAddToCart}
                 disabled={addToCart.isPending}
-                className="w-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30 btn-shine"
+                size="sm"
+                className="w-full bg-primary/95 hover:bg-primary backdrop-blur-sm"
               >
-                <ShoppingCart className={cn(
-                  'h-4 w-4 mr-2 transition-transform',
-                  addToCart.isPending && 'animate-bounce'
-                )} />
-                {addToCart.isPending ? 'Adding...' : 'Add to Cart'}
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Add to Cart
               </Button>
             </div>
           )}
         </div>
 
         {/* Info */}
-        <div className="p-4 relative">
-          {/* Subtle Glow Effect */}
-          <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="p-4">
+          {product.category && (
+            <p className="text-xs text-muted-foreground mb-1">{product.category.name}</p>
+          )}
+          <h3 className="font-medium text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+            {product.name}
+          </h3>
           
-          <div className="relative">
-            {product.category && (
-              <p className="text-xs text-primary font-medium mb-1 uppercase tracking-wider">{product.category.name}</p>
-            )}
-            <h3 className="font-display font-semibold text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors duration-300">
-              {product.name}
-            </h3>
-            
-            {/* Flash Sale Countdown */}
-            {isFlashSaleActive && saleEndDate && (
-              <div className="mb-2">
-                <CountdownDisplay endDate={product.sale_end_date!} />
-              </div>
-            )}
-            
-            <div className="flex items-center gap-2">
-              <span className={cn(
-                "font-display text-lg font-bold transition-colors duration-300",
-                isFlashSaleActive ? "text-destructive" : "text-foreground group-hover:text-primary"
-              )}>
-                ${displayPrice?.toFixed(2)}
-              </span>
-              {hasDiscount && (
-                <span className="text-sm text-muted-foreground line-through">
-                  ${product.price.toFixed(2)}
-                </span>
-              )}
+          {/* Flash Sale Countdown */}
+          {isFlashSaleActive && saleEndDate && (
+            <div className="mb-2">
+              <CountdownDisplay endDate={product.sale_end_date!} />
             </div>
+          )}
+          
+          <div className="flex items-center gap-2">
+            <span className={cn(
+              "font-display text-lg font-semibold",
+              isFlashSaleActive ? "text-destructive" : "text-foreground"
+            )}>
+              ${displayPrice?.toFixed(2)}
+            </span>
+            {hasDiscount && (
+              <span className="text-sm text-muted-foreground line-through">
+                ${product.price.toFixed(2)}
+              </span>
+            )}
           </div>
         </div>
-        
-        {/* Bottom Glow Line */}
-        <div className={cn(
-          "absolute bottom-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-500",
-          isFlashSaleActive 
-            ? "bg-gradient-to-r from-transparent via-destructive to-transparent" 
-            : "bg-gradient-to-r from-transparent via-primary to-transparent"
-        )} />
       </div>
     </Link>
   );
