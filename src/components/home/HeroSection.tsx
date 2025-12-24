@@ -1,10 +1,9 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Zap, ArrowRight } from 'lucide-react';
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import HeroCarousel from './HeroCarousel';
-
-const fullDescription = "Get instant access to gift cards, game top-ups, subscriptions, and premium gaming accounts. Fast, secure, and reliable.";
+import { useHomepageSection } from '@/hooks/useHomepageSections';
 
 // Counter animation hook
 const useCountUp = (end: number, duration: number = 2000, start: number = 0, trigger: boolean = true) => {
@@ -37,6 +36,7 @@ const useCountUp = (end: number, duration: number = 2000, start: number = 0, tri
 };
 
 export default function HeroSection() {
+  const { data: section } = useHomepageSection('hero');
   const [isVisible, setIsVisible] = useState(false);
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -44,10 +44,29 @@ export default function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
   
-  // Counter values
-  const productsCount = useCountUp(10, 2000, 0, statsInView);
-  const gamersCount = useCountUp(50, 2500, 0, statsInView);
-  const supportHours = useCountUp(24, 1500, 0, statsInView);
+  // Get content from database or use defaults
+  const description = section?.description || "Get instant access to gift cards, game top-ups, subscriptions, and premium gaming accounts. Fast, secure, and reliable.";
+  const badgeText = section?.badge_text || 'Instant Digital Delivery';
+  const buttonText = section?.button_text || 'Shop Now';
+  const buttonUrl = section?.button_url || '/shop';
+  const secondaryButtonText = section?.secondary_button_text || 'Browse Gift Cards';
+  const secondaryButtonUrl = section?.secondary_button_url || '/shop?category=gift-cards';
+  
+  // Parse extra_data for title words and stats
+  const extraData = section?.extra_data as { title_words?: string[]; gradient_words?: string[]; stats?: { label: string; value: string }[] } | null;
+  const titleWords = extraData?.title_words || ['LEVEL', 'UP', 'YOUR'];
+  const gradientWords = extraData?.gradient_words || ['GAMING', 'EXPERIENCE'];
+  const stats = extraData?.stats || [
+    { label: 'Products', value: '10K+' },
+    { label: 'Happy Gamers', value: '50K+' },
+    { label: 'Support', value: '24/7' },
+  ];
+
+  // Counter values - parse from stats
+  const parseStatValue = (value: string) => parseInt(value.replace(/[^0-9]/g, '')) || 0;
+  const productsCount = useCountUp(parseStatValue(stats[0]?.value || '10'), 2000, 0, statsInView);
+  const gamersCount = useCountUp(parseStatValue(stats[1]?.value || '50'), 2500, 0, statsInView);
+  const supportHours = useCountUp(parseStatValue(stats[2]?.value || '24'), 1500, 0, statsInView);
   
   useEffect(() => {
     setIsVisible(true);
@@ -80,16 +99,16 @@ export default function HeroSection() {
   useEffect(() => {
     if (!isTyping) return;
     
-    if (displayedText.length < fullDescription.length) {
+    if (displayedText.length < description.length) {
       const timeout = setTimeout(() => {
-        setDisplayedText(fullDescription.slice(0, displayedText.length + 1));
+        setDisplayedText(description.slice(0, displayedText.length + 1));
       }, 25);
       return () => clearTimeout(timeout);
     }
-  }, [isTyping, displayedText]);
+  }, [isTyping, displayedText, description]);
 
-  const titleWords = ['LEVEL', 'UP', 'YOUR'];
-  const gradientWords = ['GAMING', 'EXPERIENCE'];
+  // Don't render if section is hidden
+  if (section && !section.is_visible) return null;
 
   return (
     <section ref={sectionRef} className="relative min-h-[700px] flex items-center overflow-hidden">
@@ -110,7 +129,7 @@ export default function HeroSection() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8 animate-slide-up backdrop-blur-md">
             <Sparkles className="h-4 w-4 text-primary animate-sparkle" />
-            <span className="text-sm font-medium text-primary">Instant Digital Delivery</span>
+            <span className="text-sm font-medium text-primary">{badgeText}</span>
           </div>
 
           {/* Title with Animated Text Reveal */}
@@ -156,7 +175,7 @@ export default function HeroSection() {
           {/* Description with Typewriter Effect */}
           <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto mb-8 h-[60px] md:h-[56px] backdrop-blur-sm">
             {displayedText}
-            {displayedText.length < fullDescription.length && (
+            {displayedText.length < description.length && (
               <span className="inline-block w-0.5 h-5 bg-primary ml-1 animate-blink" />
             )}
           </p>
@@ -168,19 +187,21 @@ export default function HeroSection() {
               <div className="absolute -inset-1 bg-gradient-to-r from-primary via-destructive to-primary rounded-lg opacity-75 blur-sm group-hover:opacity-100 transition-opacity animate-glow-ring" />
               <div className="absolute -inset-2 bg-gradient-to-r from-primary via-destructive to-primary rounded-lg opacity-40 blur-md animate-glow-ring" style={{ animationDelay: '0.2s' }} />
               <Button asChild size="lg" className="relative glow-primary text-lg px-8 bg-gradient-to-r from-primary to-destructive hover:from-primary/90 hover:to-destructive/90 border-0 overflow-hidden group">
-                <Link to="/shop">
+                <Link to={buttonUrl}>
                   <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                   <Zap className="h-5 w-5 mr-2 animate-zap" />
-                  Shop Now
+                  {buttonText}
                 </Link>
               </Button>
             </div>
-            <Button asChild variant="outline" size="lg" className="text-lg px-8 hover:bg-primary/10 hover:border-primary transition-all duration-300 backdrop-blur-sm bg-background/50">
-              <Link to="/shop?category=gift-cards">
-                Browse Gift Cards
-                <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </Button>
+            {secondaryButtonText && (
+              <Button asChild variant="outline" size="lg" className="text-lg px-8 hover:bg-primary/10 hover:border-primary transition-all duration-300 backdrop-blur-sm bg-background/50">
+                <Link to={secondaryButtonUrl}>
+                  {secondaryButtonText}
+                  <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </Button>
+            )}
           </div>
 
           {/* Stats with Counter Animation */}
@@ -192,7 +213,7 @@ export default function HeroSection() {
                 </p>
                 <div className="absolute -inset-2 bg-primary/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <p className="text-sm text-muted-foreground mt-2">Products</p>
+              <p className="text-sm text-muted-foreground mt-2">{stats[0]?.label || 'Products'}</p>
             </div>
             <div className="text-center group">
               <div className="relative inline-block backdrop-blur-sm bg-background/30 px-4 py-2 rounded-lg border border-border/20">
@@ -201,7 +222,7 @@ export default function HeroSection() {
                 </p>
                 <div className="absolute -inset-2 bg-secondary/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <p className="text-sm text-muted-foreground mt-2">Happy Gamers</p>
+              <p className="text-sm text-muted-foreground mt-2">{stats[1]?.label || 'Happy Gamers'}</p>
             </div>
             <div className="text-center group">
               <div className="relative inline-block backdrop-blur-sm bg-background/30 px-4 py-2 rounded-lg border border-border/20">
@@ -210,7 +231,7 @@ export default function HeroSection() {
                 </p>
                 <div className="absolute -inset-2 bg-accent/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <p className="text-sm text-muted-foreground mt-2">Support</p>
+              <p className="text-sm text-muted-foreground mt-2">{stats[2]?.label || 'Support'}</p>
             </div>
           </div>
         </div>

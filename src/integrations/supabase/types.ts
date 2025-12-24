@@ -348,6 +348,110 @@ export type Database = {
         }
         Relationships: []
       }
+      homepage_sections: {
+        Row: {
+          badge_text: string | null
+          button_text: string | null
+          button_url: string | null
+          created_at: string
+          description: string | null
+          extra_data: Json | null
+          id: string
+          is_visible: boolean
+          secondary_button_text: string | null
+          secondary_button_url: string | null
+          section_key: string
+          sort_order: number
+          subtitle: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          badge_text?: string | null
+          button_text?: string | null
+          button_url?: string | null
+          created_at?: string
+          description?: string | null
+          extra_data?: Json | null
+          id?: string
+          is_visible?: boolean
+          secondary_button_text?: string | null
+          secondary_button_url?: string | null
+          section_key: string
+          sort_order?: number
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          badge_text?: string | null
+          button_text?: string | null
+          button_url?: string | null
+          created_at?: string
+          description?: string | null
+          extra_data?: Json | null
+          id?: string
+          is_visible?: boolean
+          secondary_button_text?: string | null
+          secondary_button_url?: string | null
+          section_key?: string
+          sort_order?: number
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      navigation_menu: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          location: string
+          open_in_new_tab: boolean
+          parent_id: string | null
+          sort_order: number
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          location?: string
+          open_in_new_tab?: boolean
+          parent_id?: string | null
+          sort_order?: number
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          location?: string
+          open_in_new_tab?: boolean
+          parent_id?: string | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "navigation_menu_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "navigation_menu"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string

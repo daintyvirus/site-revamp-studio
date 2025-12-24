@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, Tags, ShoppingBag, CreditCard, Mail, ArrowLeft, Loader2, Image, Settings, Tag } from 'lucide-react';
+import { LayoutDashboard, Package, Tags, ShoppingBag, CreditCard, Mail, ArrowLeft, Loader2, Image, Settings, Tag, Menu, Layout } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
@@ -17,6 +17,8 @@ const navItems = [
   { title: 'Payment Methods', path: '/admin/payment-methods', icon: CreditCard },
   { title: 'Email Templates', path: '/admin/email-templates', icon: Mail },
   { title: 'Hero Images', path: '/admin/hero-images', icon: Image },
+  { title: 'Homepage Sections', path: '/admin/homepage-sections', icon: Layout },
+  { title: 'Navigation Menu', path: '/admin/navigation-menu', icon: Menu },
   { title: 'Site Settings', path: '/admin/site-settings', icon: Settings },
 ];
 

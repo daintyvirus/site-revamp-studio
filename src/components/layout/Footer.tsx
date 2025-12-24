@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom';
 import { Gamepad2, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube, MessageCircle } from 'lucide-react';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useNavigationMenu } from '@/hooks/useNavigationMenu';
 
 export default function Footer() {
   const { data: settings } = useSiteSettings();
+  const { data: quickLinks } = useNavigationMenu('footer_quick_links');
+  const { data: supportLinks } = useNavigationMenu('footer_support');
 
   const siteName = settings?.site_name || 'GOLDEN BUMPS';
   const tagline = settings?.site_tagline || 'Your trusted source for digital gaming products, gift cards, and game top-ups.';
@@ -62,57 +65,41 @@ export default function Footer() {
             )}
           </div>
 
-          {/* Quick Links */}
+          {/* Quick Links (Dynamic) */}
           <div>
             <h3 className="font-display font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2 text-sm">
-              <li>
-                <Link to="/shop" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Shop
-                </Link>
-              </li>
-              <li>
-                <Link to="/shop?category=gift-cards" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Gift Cards
-                </Link>
-              </li>
-              <li>
-                <Link to="/shop?category=top-ups" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Game Top-Ups
-                </Link>
-              </li>
-              <li>
-                <Link to="/shop?category=subscriptions" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Subscriptions
-                </Link>
-              </li>
+              {quickLinks?.map((item) => (
+                <li key={item.id}>
+                  <Link
+                    to={item.url}
+                    target={item.open_in_new_tab ? '_blank' : undefined}
+                    rel={item.open_in_new_tab ? 'noopener noreferrer' : undefined}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {item.title}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Support */}
+          {/* Support (Dynamic) */}
           <div>
             <h3 className="font-display font-semibold mb-4">Support</h3>
             <ul className="space-y-2 text-sm">
-              <li>
-                <Link to="/faq" className="text-muted-foreground hover:text-foreground transition-colors">
-                  FAQ
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Contact Us
-                </Link>
-              </li>
-              <li>
-                <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Terms of Service
-                </Link>
-              </li>
-              <li>
-                <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Privacy Policy
-                </Link>
-              </li>
+              {supportLinks?.map((item) => (
+                <li key={item.id}>
+                  <Link
+                    to={item.url}
+                    target={item.open_in_new_tab ? '_blank' : undefined}
+                    rel={item.open_in_new_tab ? 'noopener noreferrer' : undefined}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {item.title}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
