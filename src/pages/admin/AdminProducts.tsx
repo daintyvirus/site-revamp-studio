@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Plus, Pencil, Trash2, Search, Upload, Download, Calculator } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, Pencil, Trash2, Search, Upload, Download, Calculator, ExternalLink, AlertTriangle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,11 +29,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import ProductForm from '@/components/admin/ProductForm';
 import ProductImportDialog from '@/components/admin/ProductImportDialog';
 import ProductExportDialog from '@/components/admin/ProductExportDialog';
 import BulkPriceEditor from '@/components/admin/BulkPriceEditor';
 import { useAdminProducts, useDeleteProduct } from '@/hooks/useProducts';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import type { Product } from '@/types/database';
 import { toast } from 'sonner';
 
@@ -46,7 +54,18 @@ export default function AdminProducts() {
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
 
   const { data: products, isLoading, refetch } = useAdminProducts();
+  const { data: settingsMap } = useSiteSettings();
   const deleteProduct = useDeleteProduct();
+
+  // Get low stock threshold from settings
+  const lowStockThreshold = useMemo(() => {
+    return parseInt(settingsMap?.low_stock_threshold || '5') || 5;
+  }, [settingsMap]);
+
+  // Count low stock products
+  const lowStockCount = useMemo(() => {
+    return products?.filter(p => p.stock <= lowStockThreshold && p.is_active).length || 0;
+  }, [products, lowStockThreshold]);
 
   const filteredProducts = products?.filter(p => 
     p.name.toLowerCase().includes(search.toLowerCase())
@@ -82,6 +101,12 @@ export default function AdminProducts() {
             <p className="text-muted-foreground">Manage your product catalog</p>
           </div>
           <div className="flex items-center gap-2">
+            {lowStockCount > 0 && (
+              <Badge variant="destructive" className="flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                {lowStockCount} Low Stock
+              </Badge>
+            )}
             <Button variant="outline" onClick={() => setIsImportOpen(true)}>
               <Upload className="h-4 w-4 mr-2" />
               Import
@@ -156,17 +181,33 @@ export default function AdminProducts() {
                     </TableCell>
                     <TableCell>{product.category?.name ?? '-'}</TableCell>
                     <TableCell>
-                      <span>${Number(product.price).toFixed(2)}</span>
-                      {product.sale_price && (
-                        <span className="ml-2 text-xs text-muted-foreground line-through">
-                          ${Number(product.sale_price).toFixed(2)}
-                        </span>
-                      )}
+                      <div className="flex flex-col">
+                        <span className="font-medium">৳{Number(product.price_bdt || 0).toLocaleString()}</span>
+                        {product.sale_price_bdt && (
+                          <span className="text-xs text-green-600">
+                            Sale: ৳{Number(product.sale_price_bdt).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={product.stock > 5 ? 'default' : product.stock > 0 ? 'secondary' : 'destructive'}>
-                        {product.stock}
-                      </Badge>
+                      <div className="flex items-center gap-1">
+                        {product.stock <= lowStockThreshold && product.is_active && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                Low stock alert (threshold: {lowStockThreshold})
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        <Badge variant={product.stock > lowStockThreshold ? 'default' : product.stock > 0 ? 'secondary' : 'destructive'}>
+                          {product.stock}
+                        </Badge>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={product.is_active ? 'default' : 'secondary'}>
@@ -174,7 +215,19 @@ export default function AdminProducts() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" asChild>
+                                <Link to={`/products/${product.slug}`} target="_blank">
+                                  <ExternalLink className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>View Product</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(product)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
