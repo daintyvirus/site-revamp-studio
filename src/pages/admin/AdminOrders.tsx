@@ -295,7 +295,12 @@ export default function AdminOrders() {
                       {format(new Date(order.created_at), 'MMM dd, yyyy')}
                     </TableCell>
                     <TableCell>{order.items?.length ?? 0} items</TableCell>
-                    <TableCell className="font-bold">${Number(order.total).toFixed(2)}</TableCell>
+                    <TableCell className="font-bold">
+                      {(order as any).currency === 'USD' 
+                        ? `$${Number(order.total).toFixed(2)}` 
+                        : `৳${Math.round(Number(order.total)).toLocaleString()}`
+                      }
+                    </TableCell>
                     <TableCell>
                       <Select
                         value={order.status}
@@ -405,8 +410,13 @@ export default function AdminOrders() {
               </div>
 
               <div className="border-t border-border pt-4 flex justify-between font-bold">
-                <span>Total</span>
-                <span className="text-primary">${Number(selectedOrder.total).toFixed(2)}</span>
+                <span>Total ({(selectedOrder as any).currency || 'BDT'})</span>
+                <span className="text-primary">
+                  {(selectedOrder as any).currency === 'USD'
+                    ? `$${Number(selectedOrder.total).toFixed(2)}`
+                    : `৳${Math.round(Number(selectedOrder.total)).toLocaleString()}`
+                  }
+                </span>
               </div>
 
               {selectedOrder.notes && (

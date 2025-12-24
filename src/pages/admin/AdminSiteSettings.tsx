@@ -37,6 +37,7 @@ const categoryIcons: Record<string, React.ReactNode> = {
   social: <Share2 className="h-4 w-4" />,
   footer: <FileText className="h-4 w-4" />,
   currency: <DollarSign className="h-4 w-4" />,
+  notifications: <Mail className="h-4 w-4" />,
 };
 
 const settingIcons: Record<string, React.ReactNode> = {
@@ -54,6 +55,7 @@ const settingIcons: Record<string, React.ReactNode> = {
   usd_to_bdt_rate: <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />,
   default_currency: <Banknote className="h-4 w-4 text-muted-foreground" />,
   show_currency_toggle: <DollarSign className="h-4 w-4 text-muted-foreground" />,
+  admin_notification_email: <Mail className="h-4 w-4 text-muted-foreground" />,
 };
 
 const categoryLabels: Record<string, { title: string; description: string }> = {
@@ -76,6 +78,10 @@ const categoryLabels: Record<string, { title: string; description: string }> = {
   currency: {
     title: 'Currency',
     description: 'Manage currency settings and exchange rates'
+  },
+  notifications: {
+    title: 'Notifications',
+    description: 'Configure email notification settings'
   },
 };
 
@@ -129,8 +135,8 @@ export default function AdminSiteSettings() {
     return acc;
   }, {} as Record<string, SiteSetting[]>) || {};
 
-  // Sort categories to put currency at the end
-  const categoryOrder = ['branding', 'contact', 'social', 'footer', 'currency'];
+  // Sort categories in specific order
+  const categoryOrder = ['branding', 'contact', 'social', 'footer', 'notifications', 'currency'];
   const categories = Object.keys(groupedSettings).sort((a, b) => {
     const aIndex = categoryOrder.indexOf(a);
     const bIndex = categoryOrder.indexOf(b);
@@ -324,7 +330,7 @@ export default function AdminSiteSettings() {
         </div>
 
         <Tabs defaultValue={categories[0]} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-flex">
             {categories.map(category => (
               <TabsTrigger key={category} value={category} className="gap-2">
                 {categoryIcons[category]}

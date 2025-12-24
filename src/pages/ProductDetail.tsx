@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
 import VariantSelector from '@/components/products/VariantSelector';
 import ProductReviews from '@/components/products/ProductReviews';
+import RelatedProducts from '@/components/products/RelatedProducts';
 import StarRating from '@/components/products/StarRating';
 import { useProductReviewStats } from '@/hooks/useProductReviews';
 import { cn } from '@/lib/utils';
@@ -451,6 +452,9 @@ export default function ProductDetail() {
             </div>
           </div>
         </div>
+
+        {/* Related Products Section */}
+        <RelatedProducts productId={product.id} categoryId={product.category_id} />
 
         {/* Reviews Section */}
         <div className="mt-16 pt-8 border-t">
