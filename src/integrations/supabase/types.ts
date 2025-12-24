@@ -628,7 +628,9 @@ export type Database = {
           product_id: string
           sale_price: number | null
           sale_price_bdt: number | null
+          sku: string | null
           stock: number
+          wc_id: number | null
         }
         Insert: {
           created_at?: string
@@ -639,7 +641,9 @@ export type Database = {
           product_id: string
           sale_price?: number | null
           sale_price_bdt?: number | null
+          sku?: string | null
           stock?: number
+          wc_id?: number | null
         }
         Update: {
           created_at?: string
@@ -650,7 +654,9 @@ export type Database = {
           product_id?: string
           sale_price?: number | null
           sale_price_bdt?: number | null
+          sku?: string | null
           stock?: number
+          wc_id?: number | null
         }
         Relationships: [
           {
@@ -676,14 +682,18 @@ export type Database = {
           name: string
           price: number
           price_bdt: number | null
+          product_type: string | null
           sale_end_date: string | null
           sale_price: number | null
           sale_price_bdt: number | null
           sale_start_date: string | null
           short_description: string | null
+          sku: string | null
           slug: string
           stock: number
+          tags: string[] | null
           updated_at: string
+          wc_id: number | null
         }
         Insert: {
           brand_id?: string | null
@@ -698,14 +708,18 @@ export type Database = {
           name: string
           price: number
           price_bdt?: number | null
+          product_type?: string | null
           sale_end_date?: string | null
           sale_price?: number | null
           sale_price_bdt?: number | null
           sale_start_date?: string | null
           short_description?: string | null
+          sku?: string | null
           slug: string
           stock?: number
+          tags?: string[] | null
           updated_at?: string
+          wc_id?: number | null
         }
         Update: {
           brand_id?: string | null
@@ -720,14 +734,18 @@ export type Database = {
           name?: string
           price?: number
           price_bdt?: number | null
+          product_type?: string | null
           sale_end_date?: string | null
           sale_price?: number | null
           sale_price_bdt?: number | null
           sale_start_date?: string | null
           short_description?: string | null
+          sku?: string | null
           slug?: string
           stock?: number
+          tags?: string[] | null
           updated_at?: string
+          wc_id?: number | null
         }
         Relationships: [
           {
