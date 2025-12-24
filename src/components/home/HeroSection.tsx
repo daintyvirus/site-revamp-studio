@@ -1,8 +1,17 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Zap, ArrowRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export default function HeroSection() {
+  const [isVisible, setIsVisible] = useState(false);
+  
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
+
+  const titleWords = ['LEVEL', 'UP', 'YOUR'];
+  const gradientWords = ['GAMING', 'EXPERIENCE'];
   return (
     <section className="relative min-h-[700px] flex items-center overflow-hidden">
       {/* Red to Black Gradient Background */}
@@ -28,11 +37,43 @@ export default function HeroSection() {
             <span className="text-sm font-medium text-primary">Instant Digital Delivery</span>
           </div>
 
-          {/* Title */}
-          <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-black tracking-tight mb-6 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-            LEVEL UP YOUR
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent">
-              GAMING EXPERIENCE
+          {/* Title with Animated Text Reveal */}
+          <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-black tracking-tight mb-6">
+            <span className="block overflow-hidden">
+              {titleWords.map((word, index) => (
+                <span
+                  key={word}
+                  className={`inline-block transition-all duration-700 ease-out ${
+                    isVisible 
+                      ? 'translate-y-0 opacity-100' 
+                      : 'translate-y-full opacity-0'
+                  }`}
+                  style={{ 
+                    transitionDelay: `${index * 100 + 200}ms`,
+                    marginRight: '0.3em'
+                  }}
+                >
+                  {word}
+                </span>
+              ))}
+            </span>
+            <span className="block overflow-hidden">
+              {gradientWords.map((word, index) => (
+                <span
+                  key={word}
+                  className={`inline-block text-transparent bg-clip-text bg-gradient-to-r from-primary via-destructive to-accent transition-all duration-700 ease-out ${
+                    isVisible 
+                      ? 'translate-y-0 opacity-100 blur-0' 
+                      : 'translate-y-full opacity-0 blur-sm'
+                  }`}
+                  style={{ 
+                    transitionDelay: `${index * 150 + 500}ms`,
+                    marginRight: '0.3em'
+                  }}
+                >
+                  {word}
+                </span>
+              ))}
             </span>
           </h1>
 
