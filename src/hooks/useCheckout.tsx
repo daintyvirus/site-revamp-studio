@@ -3,10 +3,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useCart, useClearCart } from './useCart';
 import { toast } from '@/hooks/use-toast';
+import type { PaymentMethod } from '@/components/checkout/PaymentMethodSelector';
+
+interface CustomerInfo {
+  name: string;
+  email: string;
+  phone: string;
+}
 
 interface CheckoutData {
+  customerInfo: CustomerInfo;
+  paymentMethod: PaymentMethod;
+  transactionId: string;
   notes?: string;
-  paymentMethod: 'whatsapp';
 }
 
 export function useCheckout() {
@@ -16,9 +25,13 @@ export function useCheckout() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ notes, paymentMethod }: CheckoutData) => {
+    mutationFn: async ({ customerInfo, paymentMethod, transactionId, notes }: CheckoutData) => {
       if (!user || !cart?.length) {
         throw new Error('No items in cart');
+      }
+
+      if (!transactionId.trim()) {
+        throw new Error('Transaction ID is required');
       }
 
       const total = cart.reduce((sum, item) => {
@@ -26,7 +39,7 @@ export function useCheckout() {
         return sum + price * item.quantity;
       }, 0);
 
-      // Create order
+      // Create order with customer info and transaction ID
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -35,7 +48,11 @@ export function useCheckout() {
           notes,
           payment_method: paymentMethod,
           status: 'pending',
-          payment_status: 'pending'
+          payment_status: 'pending',
+          customer_name: customerInfo.name,
+          customer_email: customerInfo.email,
+          customer_phone: customerInfo.phone,
+          transaction_id: transactionId
         })
         .select()
         .single();
@@ -66,7 +83,7 @@ export function useCheckout() {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       toast({
         title: 'Order placed!',
-        description: 'Your order has been created successfully.'
+        description: 'Your payment is being verified. You will receive confirmation soon.'
       });
     },
     onError: (error: Error) => {
@@ -77,28 +94,4 @@ export function useCheckout() {
       });
     }
   });
-}
-
-export function generateWhatsAppMessage(
-  cart: Array<{ product?: { name: string; sale_price?: number | null; price: number }; quantity: number }>,
-  orderId: string,
-  notes?: string
-) {
-  const items = cart.map(item => 
-    `• ${item.product?.name} x${item.quantity} - $${((item.product?.sale_price || item.product?.price || 0) * item.quantity).toFixed(2)}`
-  ).join('\n');
-
-  const total = cart.reduce((sum, item) => {
-    const price = item.product?.sale_price || item.product?.price || 0;
-    return sum + price * item.quantity;
-  }, 0);
-
-  let message = `🎮 *New Order* #${orderId.slice(0, 8)}\n\n`;
-  message += `*Items:*\n${items}\n\n`;
-  message += `*Total:* $${total.toFixed(2)}\n`;
-  if (notes) {
-    message += `\n*Notes:* ${notes}`;
-  }
-
-  return encodeURIComponent(message);
 }

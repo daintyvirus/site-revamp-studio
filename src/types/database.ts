@@ -92,6 +92,10 @@ export interface Order {
   payment_method: string | null;
   payment_status: string;
   notes: string | null;
+  customer_name: string | null;
+  customer_email: string | null;
+  customer_phone: string | null;
+  transaction_id: string | null;
   created_at: string;
   updated_at: string;
   items?: OrderItem[];
