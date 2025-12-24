@@ -13,6 +13,7 @@ export interface PaymentMethod {
   instructions: string | null;
   is_active: boolean;
   sort_order: number;
+  available_currencies: string[] | null;
   created_at: string;
   updated_at: string;
 }

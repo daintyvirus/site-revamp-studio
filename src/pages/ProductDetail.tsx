@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, Heart, ShoppingCart, Zap, Package, Truck, Clock } from 'lucide-react';
+import { ArrowLeft, Heart, ShoppingCart, Zap, Package, Truck, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -10,6 +10,8 @@ import { useProduct } from '@/hooks/useProducts';
 import { useAddToCart } from '@/hooks/useCart';
 import { useToggleWishlist, useIsInWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/hooks/useAuth';
+import { useCurrency } from '@/hooks/useCurrency';
+import VariantSelector from '@/components/products/VariantSelector';
 import { cn } from '@/lib/utils';
 
 interface CountdownTimerProps {
@@ -94,9 +96,22 @@ export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: product, isLoading, error } = useProduct(slug || '');
   const { user } = useAuth();
+  const { formatPrice, currency } = useCurrency();
   const addToCart = useAddToCart();
   const toggleWishlist = useToggleWishlist();
   const isInWishlist = useIsInWishlist(product?.id || '');
+  
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1);
+
+  // Set default variant when product loads
+  useEffect(() => {
+    if (product?.variants?.length && !selectedVariantId) {
+      setSelectedVariantId(product.variants[0].id);
+    }
+  }, [product?.variants, selectedVariantId]);
+
+  const selectedVariant = product?.variants?.find(v => v.id === selectedVariantId);
 
   // Check if flash sale is active
   const now = new Date();
@@ -109,15 +124,29 @@ export default function ProductDetail() {
     (!saleStartDate || saleStartDate <= now) &&
     (!saleEndDate || saleEndDate > now);
 
-  const hasDiscount = product?.sale_price && product.sale_price < product.price;
-  const displayPrice = hasDiscount ? product.sale_price : product?.price;
+  // Use variant price if selected, otherwise product price
+  const basePrice = selectedVariant 
+    ? (selectedVariant.sale_price || selectedVariant.price)
+    : (product?.sale_price || product?.price || 0);
+  
+  const originalPrice = selectedVariant 
+    ? selectedVariant.price 
+    : (product?.price || 0);
+
+  const hasDiscount = basePrice < originalPrice;
   const discountPercent = hasDiscount
-    ? Math.round(((product.price - product.sale_price!) / product.price) * 100)
+    ? Math.round(((originalPrice - basePrice) / originalPrice) * 100)
     : 0;
+
+  const currentStock = selectedVariant?.stock ?? product?.stock ?? 0;
 
   const handleAddToCart = () => {
     if (product) {
-      addToCart.mutate({ productId: product.id });
+      addToCart.mutate({ 
+        productId: product.id, 
+        variantId: selectedVariantId || undefined,
+        quantity 
+      });
     }
   };
 
@@ -261,32 +290,79 @@ export default function ProductDetail() {
               <CountdownTimer endDate={product.sale_end_date!} />
             )}
 
+            {/* Variant Selector */}
+            {product.variants && product.variants.length > 0 && (
+              <div className="mb-6">
+                <VariantSelector
+                  variants={product.variants}
+                  selectedVariantId={selectedVariantId}
+                  onSelect={setSelectedVariantId}
+                />
+              </div>
+            )}
+
             {/* Price */}
             <div className="flex items-baseline gap-3 mb-6">
               <span className={cn(
                 "font-display text-4xl font-bold",
                 isFlashSaleActive ? "text-destructive" : "text-foreground"
               )}>
-                ${displayPrice?.toFixed(2)}
+                {formatPrice(basePrice)}
               </span>
               {hasDiscount && (
                 <span className="text-xl text-muted-foreground line-through">
-                  ${product.price.toFixed(2)}
+                  {formatPrice(originalPrice)}
                 </span>
               )}
               {hasDiscount && (
                 <Badge variant="secondary" className="text-sm">
-                  Save ${(product.price - product.sale_price!).toFixed(2)}
+                  -{discountPercent}%
                 </Badge>
               )}
+            </div>
+
+            {/* Quantity Selector */}
+            <div className="flex items-center gap-4 mb-6">
+              <span className="text-sm font-medium text-foreground">Quantity:</span>
+              <div className="flex items-center gap-2 bg-muted rounded-lg p-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  disabled={quantity <= 1}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="w-12 text-center font-medium">{quantity}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setQuantity(Math.min(currentStock, quantity + 1))}
+                  disabled={quantity >= currentStock}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Total Price */}
+            <div className="bg-muted/50 rounded-xl p-4 mb-6">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Total:</span>
+                <span className="font-display text-2xl font-bold text-primary">
+                  {formatPrice(basePrice * quantity)}
+                </span>
+              </div>
             </div>
 
             {/* Stock Status */}
             <div className="flex items-center gap-2 mb-6">
               <Package className="h-4 w-4 text-muted-foreground" />
-              {product.stock > 0 ? (
+              {currentStock > 0 ? (
                 <span className="text-sm text-green-500 font-medium">
-                  In Stock ({product.stock} available)
+                  In Stock ({currentStock} available)
                 </span>
               ) : (
                 <span className="text-sm text-destructive font-medium">Out of Stock</span>
@@ -328,10 +404,10 @@ export default function ProductDetail() {
                         : "glow-purple"
                     )}
                     onClick={handleAddToCart}
-                    disabled={addToCart.isPending || product.stock <= 0}
+                    disabled={addToCart.isPending || currentStock <= 0}
                   >
                     <ShoppingCart className="h-5 w-5 mr-2" />
-                    {product.stock <= 0 ? 'Out of Stock' : isFlashSaleActive ? 'Buy Now - Flash Sale!' : 'Add to Cart'}
+                    {currentStock <= 0 ? 'Out of Stock' : isFlashSaleActive ? 'Buy Now - Flash Sale!' : 'Add to Cart'}
                   </Button>
                   <Button
                     size="lg"
@@ -351,29 +427,6 @@ export default function ProductDetail() {
                 </Button>
               )}
             </div>
-
-            {/* Variants (if any) */}
-            {product.variants && product.variants.length > 0 && (
-              <div className="mt-8">
-                <h2 className="font-display font-semibold text-foreground mb-4">Available Options</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {product.variants.map((variant) => (
-                    <div 
-                      key={variant.id}
-                      className="p-3 rounded-lg border border-border bg-card hover:border-primary/50 transition-colors cursor-pointer"
-                    >
-                      <p className="font-medium text-foreground text-sm">{variant.name}</p>
-                      <p className="text-primary font-display font-semibold">
-                        ${(variant.sale_price || variant.price).toFixed(2)}
-                      </p>
-                      {variant.stock <= 0 && (
-                        <Badge variant="secondary" className="mt-1 text-xs">Out of Stock</Badge>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

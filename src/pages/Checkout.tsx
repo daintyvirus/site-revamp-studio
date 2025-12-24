@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { X, ShoppingBag, ArrowLeft, ArrowRight } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
@@ -7,6 +7,7 @@ import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { useCheckout } from '@/hooks/useCheckout';
 import { useActivePaymentMethods } from '@/hooks/usePaymentMethods';
+import { useCurrency } from '@/hooks/useCurrency';
 import CustomerInfoForm from '@/components/checkout/CustomerInfoForm';
 import PaymentMethodSelector from '@/components/checkout/PaymentMethodSelector';
 import PaymentInstructions from '@/components/checkout/PaymentInstructions';
@@ -19,6 +20,7 @@ export default function Checkout() {
   const { user } = useAuth();
   const { data: cart, isLoading } = useCart();
   const { data: paymentMethods, isLoading: methodsLoading } = useActivePaymentMethods();
+  const { currency, formatPrice, convertPrice } = useCurrency();
   const checkout = useCheckout();
   const navigate = useNavigate();
   
@@ -29,13 +31,21 @@ export default function Checkout() {
 
   const selectedMethod = paymentMethods?.find(m => m.slug === selectedMethodSlug);
 
+  // Filter payment methods by current currency
+  const filteredPaymentMethods = useMemo(() => {
+    if (!paymentMethods) return [];
+    return paymentMethods.filter(m => {
+      const currencies = m.available_currencies || ['BDT', 'USD'];
+      return currencies.includes(currency);
+    });
+  }, [paymentMethods, currency]);
+
   const total = cart?.reduce((sum, item) => {
     const price = item.product?.sale_price || item.product?.price || 0;
     return sum + price * item.quantity;
   }, 0) ?? 0;
 
-  // Convert to BDT (example rate)
-  const totalBDT = total * 110;
+  const displayTotal = convertPrice(total);
 
   if (!user) {
     return (
@@ -142,7 +152,7 @@ export default function Checkout() {
                       <span className="text-sm text-muted-foreground">
                         {cart.length} item{cart.length > 1 ? 's' : ''} • {customerInfo.name}
                       </span>
-                      <span className="font-bold text-primary">{totalBDT.toFixed(0)} BDT</span>
+                      <span className="font-bold text-primary">{formatPrice(total)}</span>
                     </div>
                   </div>
                 )}
@@ -170,10 +180,10 @@ export default function Checkout() {
                 )}
 
                 {/* Step: Payment Method */}
-                {step === 'method' && paymentMethods && (
+                {step === 'method' && filteredPaymentMethods && (
                   <div className="space-y-6">
                     <PaymentMethodSelector 
-                      methods={paymentMethods} 
+                      methods={filteredPaymentMethods} 
                       selected={selectedMethodSlug} 
                       onSelect={setSelectedMethodSlug} 
                     />
@@ -188,7 +198,7 @@ export default function Checkout() {
                         disabled={!canProceedFromMethod}
                         className="flex-1 bg-blue-600 hover:bg-blue-700"
                       >
-                        Pay {totalBDT.toFixed(0)} BDT
+                        Pay {formatPrice(total)}
                       </Button>
                     </div>
                   </div>
@@ -204,7 +214,7 @@ export default function Checkout() {
                     
                     <PaymentInstructions
                       method={selectedMethod}
-                      amount={totalBDT}
+                      amount={displayTotal}
                       transactionId={transactionId}
                       onTransactionIdChange={setTransactionId}
                       storeName={STORE_NAME}

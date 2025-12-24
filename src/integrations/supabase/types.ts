@@ -574,6 +574,7 @@ export type Database = {
         Row: {
           account_name: string | null
           account_number: string
+          available_currencies: string[] | null
           created_at: string
           id: string
           instructions: string | null
@@ -588,6 +589,7 @@ export type Database = {
         Insert: {
           account_name?: string | null
           account_number: string
+          available_currencies?: string[] | null
           created_at?: string
           id?: string
           instructions?: string | null
@@ -602,6 +604,7 @@ export type Database = {
         Update: {
           account_name?: string | null
           account_number?: string
+          available_currencies?: string[] | null
           created_at?: string
           id?: string
           instructions?: string | null
