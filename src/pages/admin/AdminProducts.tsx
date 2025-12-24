@@ -38,7 +38,7 @@ import {
 import ProductForm from '@/components/admin/ProductForm';
 import ProductImportDialog from '@/components/admin/ProductImportDialog';
 import ProductExportDialog from '@/components/admin/ProductExportDialog';
-import BulkPriceEditor from '@/components/admin/BulkPriceEditor';
+import BulkOperations from '@/components/admin/BulkOperations';
 import { useAdminProducts, useDeleteProduct } from '@/hooks/useProducts';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import type { Product } from '@/types/database';
@@ -287,8 +287,8 @@ export default function AdminProducts() {
         onOpenChange={setIsExportOpen}
       />
 
-      {/* Bulk Price Editor */}
-      <BulkPriceEditor
+      {/* Bulk Operations */}
+      <BulkOperations
         open={isBulkEditOpen}
         onOpenChange={setIsBulkEditOpen}
         onComplete={() => refetch()}
