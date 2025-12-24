@@ -129,6 +129,18 @@
     font-feature-settings: "kern" 1, "liga" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-image: 
+      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(var(--primary) / 0.08), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 100%, hsl(var(--primary) / 0.05), transparent),
+      radial-gradient(circle at 20% 80%, hsl(var(--primary) / 0.04), transparent);
+    background-attachment: fixed;
+  }
+
+  .dark body {
+    background-image: 
+      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(var(--primary) / 0.12), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 100%, hsl(var(--primary) / 0.08), transparent),
+      radial-gradient(circle at 20% 80%, hsl(var(--primary) / 0.06), transparent);
   }
 
   h1, h2, h3, h4, h5, h6 {
