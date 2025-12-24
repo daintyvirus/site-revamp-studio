@@ -114,6 +114,7 @@ export interface Order {
   user_id: string;
   status: string;
   total: number;
+  currency: string;
   payment_method: string | null;
   payment_status: string;
   notes: string | null;

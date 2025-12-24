@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useCart, useClearCart } from './useCart';
+import { useCurrency } from './useCurrency';
 import { toast } from '@/hooks/use-toast';
 import { z } from 'zod';
 
@@ -46,6 +47,7 @@ interface CheckoutData {
 export function useCheckout() {
   const { user } = useAuth();
   const { data: cart } = useCart();
+  const { currency, formatPriceValue } = useCurrency();
   const clearCart = useClearCart();
   const queryClient = useQueryClient();
 
@@ -64,12 +66,15 @@ export function useCheckout() {
 
       const { customerInfo, paymentMethod, transactionId, notes } = validationResult.data;
 
+      // Calculate total based on current currency
       const total = cart.reduce((sum, item) => {
-        const price = item.product?.sale_price || item.product?.price || 0;
+        const priceBDT = item.variant?.sale_price_bdt || item.variant?.price_bdt || item.product?.sale_price_bdt || item.product?.price_bdt || 0;
+        const priceUSD = item.variant?.sale_price || item.variant?.price || item.product?.sale_price || item.product?.price || 0;
+        const price = formatPriceValue(priceBDT, priceUSD);
         return sum + price * item.quantity;
       }, 0);
 
-      // Create order with customer info and transaction ID
+      // Create order with customer info, transaction ID, and currency
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -82,21 +87,26 @@ export function useCheckout() {
           customer_name: customerInfo.name,
           customer_email: customerInfo.email,
           customer_phone: customerInfo.phone,
-          transaction_id: transactionId
+          transaction_id: transactionId,
+          currency: currency
         })
         .select()
         .single();
 
       if (orderError) throw orderError;
 
-      // Create order items
-      const orderItems = cart.map(item => ({
-        order_id: order.id,
-        product_id: item.product_id,
-        variant_id: item.variant_id,
-        quantity: item.quantity,
-        price: item.product?.sale_price || item.product?.price || 0
-      }));
+      // Create order items with price in the selected currency
+      const orderItems = cart.map(item => {
+        const priceBDT = item.variant?.sale_price_bdt || item.variant?.price_bdt || item.product?.sale_price_bdt || item.product?.price_bdt || 0;
+        const priceUSD = item.variant?.sale_price || item.variant?.price || item.product?.sale_price || item.product?.price || 0;
+        return {
+          order_id: order.id,
+          product_id: item.product_id,
+          variant_id: item.variant_id,
+          quantity: item.quantity,
+          price: formatPriceValue(priceBDT, priceUSD)
+        };
+      });
 
       const { error: itemsError } = await supabase
         .from('order_items')
@@ -109,12 +119,16 @@ export function useCheckout() {
 
       // Send order confirmation email
       try {
-        const orderItems = cart.map(item => ({
-          name: item.product?.name || 'Product',
-          quantity: item.quantity,
-          price: item.product?.sale_price || item.product?.price || 0,
-          variant: item.variant?.name
-        }));
+        const emailItems = cart.map(item => {
+          const priceBDT = item.variant?.sale_price_bdt || item.variant?.price_bdt || item.product?.sale_price_bdt || item.product?.price_bdt || 0;
+          const priceUSD = item.variant?.sale_price || item.variant?.price || item.product?.sale_price || item.product?.price || 0;
+          return {
+            name: item.product?.name || 'Product',
+            quantity: item.quantity,
+            price: formatPriceValue(priceBDT, priceUSD),
+            variant: item.variant?.name
+          };
+        });
 
         await supabase.functions.invoke('send-order-confirmation', {
           body: {
@@ -122,15 +136,48 @@ export function useCheckout() {
             customerName: customerInfo.name,
             orderId: order.id,
             orderTotal: total,
+            currency: currency,
             paymentMethod,
             transactionId,
-            items: orderItems
+            items: emailItems
           }
         });
         console.log('Order confirmation email sent');
       } catch (emailError) {
         console.error('Failed to send order confirmation email:', emailError);
         // Don't fail the order if email fails
+      }
+
+      // Send admin notification email
+      try {
+        const adminItems = cart.map(item => {
+          const priceBDT = item.variant?.sale_price_bdt || item.variant?.price_bdt || item.product?.sale_price_bdt || item.product?.price_bdt || 0;
+          const priceUSD = item.variant?.sale_price || item.variant?.price || item.product?.sale_price || item.product?.price || 0;
+          return {
+            name: item.product?.name || 'Product',
+            quantity: item.quantity,
+            price: formatPriceValue(priceBDT, priceUSD),
+            variant: item.variant?.name
+          };
+        });
+
+        await supabase.functions.invoke('send-admin-order-notification', {
+          body: {
+            orderId: order.id,
+            customerName: customerInfo.name,
+            customerEmail: customerInfo.email,
+            customerPhone: customerInfo.phone,
+            orderTotal: total,
+            currency: currency,
+            paymentMethod,
+            transactionId,
+            items: adminItems
+          }
+        });
+        console.log('Admin order notification sent');
+      } catch (adminEmailError) {
+        console.error('Failed to send admin notification:', adminEmailError);
+        // Don't fail the order if admin email fails
       }
 
       return { order, cart };

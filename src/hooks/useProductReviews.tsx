@@ -227,6 +227,33 @@ export function useModerateReview() {
         .single();
 
       if (error) throw error;
+
+      // Send email notification for approved or featured reviews
+      if (action === 'approve' || action === 'feature') {
+        try {
+          // Fetch review details for the email
+          const [profileResult, productResult] = await Promise.all([
+            supabase.from('profiles').select('email, full_name').eq('id', data.user_id).maybeSingle(),
+            supabase.from('products').select('name').eq('id', data.product_id).maybeSingle(),
+          ]);
+
+          if (profileResult.data?.email) {
+            await supabase.functions.invoke('send-review-notification', {
+              body: {
+                customerEmail: profileResult.data.email,
+                customerName: profileResult.data.full_name || 'Valued Customer',
+                productName: productResult.data?.name || 'Product',
+                reviewTitle: data.title || '',
+                notificationType: action === 'feature' ? 'featured' : 'approved',
+              },
+            });
+          }
+        } catch (emailError) {
+          console.error('Failed to send review notification:', emailError);
+          // Don't fail the moderation if email fails
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
