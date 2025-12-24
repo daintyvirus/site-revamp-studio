@@ -23,6 +23,12 @@ export interface EmailTemplate {
   help_center_url: string | null;
   social_links: Record<string, string> | null;
   custom_css: string | null;
+  greeting_format: string;
+  closing_text: string;
+  signature_name: string;
+  order_id_label: string;
+  order_total_label: string;
+  status_label: string;
   created_at: string;
   updated_at: string;
 }
