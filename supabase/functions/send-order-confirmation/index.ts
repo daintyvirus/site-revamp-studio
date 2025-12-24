@@ -21,6 +21,10 @@ interface EmailTemplate {
   show_tracking_button: boolean;
   tracking_button_text: string | null;
   footer_text: string | null;
+  support_email: string | null;
+  company_name: string | null;
+  company_logo_url: string | null;
+  help_center_url: string | null;
   is_active: boolean;
 }
 
@@ -41,6 +45,16 @@ interface OrderConfirmationRequest {
   items: OrderItem[];
 }
 
+// Replace shortcodes with actual values
+function replaceShortcodes(text: string, data: Record<string, string>): string {
+  let result = text;
+  for (const [key, value] of Object.entries(data)) {
+    const regex = new RegExp(`\\{${key}\\}`, 'gi');
+    result = result.replace(regex, value || '');
+  }
+  return result;
+}
+
 async function getEmailTemplate(supabase: any, statusType: string): Promise<EmailTemplate | null> {
   const { data, error } = await supabase
     .from('email_templates')
@@ -56,13 +70,24 @@ async function getEmailTemplate(supabase: any, statusType: string): Promise<Emai
   return data;
 }
 
+async function logEmail(supabase: any, data: {
+  order_id: string | null;
+  template_type: string;
+  recipient_email: string;
+  subject: string;
+  status: string;
+  error_message?: string;
+}) {
+  try {
+    await supabase.from('email_logs').insert(data);
+  } catch (error) {
+    console.error('Failed to log email:', error);
+  }
+}
+
 function generateEmailHtml(
   template: EmailTemplate, 
-  customerName: string, 
-  orderId: string, 
-  orderTotal: number,
-  paymentMethod: string,
-  transactionId: string,
+  shortcodeData: Record<string, string>,
   items: OrderItem[]
 ): string {
   const itemsHtml = items.map(item => `
@@ -78,6 +103,14 @@ function generateEmailHtml(
       </td>
     </tr>
   `).join('');
+
+  const headerTitle = replaceShortcodes(template.header_title, shortcodeData);
+  const bodyIntro = replaceShortcodes(template.body_intro, shortcodeData);
+  const bodyContent = template.body_content ? replaceShortcodes(template.body_content, shortcodeData) : '';
+  const footerText = template.footer_text ? replaceShortcodes(template.footer_text, shortcodeData) : '';
+  const buttonText = template.tracking_button_text ? replaceShortcodes(template.tracking_button_text, shortcodeData) : 'Track Your Order';
+  const companyName = template.company_name || 'Golden Bumps';
+  const supportEmail = template.support_email || template.sender_email;
 
   return `
     <!DOCTYPE html>
@@ -98,25 +131,26 @@ function generateEmailHtml(
         .total-row { font-weight: bold; font-size: 18px; }
         .status-badge { display: inline-block; background: #FEF3C7; color: #92400E; padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: 500; }
         .footer { background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none; }
-        .footer p { margin: 5px 0; color: #6b7280; font-size: 12px; }
+        .footer p { margin: 5px 0; color: #6b7280; font-size: 12px; white-space: pre-line; }
         .cta { display: inline-block; background: linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%); color: #1a1a1a; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-          <h1>${template.header_title}</h1>
+          ${template.company_logo_url ? `<img src="${template.company_logo_url}" alt="${companyName}" style="max-height: 60px; margin-bottom: 15px;" />` : ''}
+          <h1>${headerTitle}</h1>
         </div>
         <div class="content">
-          <p>Dear <strong>${customerName || "Valued Customer"}</strong>,</p>
-          <p>${template.body_intro}</p>
-          ${template.body_content ? `<p>${template.body_content}</p>` : ''}
+          <p>Dear <strong>${shortcodeData.customer_name || "Valued Customer"}</strong>,</p>
+          <p>${bodyIntro}</p>
+          ${bodyContent ? `<p>${bodyContent}</p>` : ''}
           
           ${template.show_order_details ? `
           <div class="order-info">
-            <p><strong>Order ID:</strong> #${orderId.slice(0, 8).toUpperCase()}</p>
-            <p><strong>Transaction ID:</strong> ${transactionId}</p>
-            <p><strong>Payment Method:</strong> ${paymentMethod}</p>
+            <p><strong>Order ID:</strong> #${shortcodeData.order_id}</p>
+            <p><strong>Transaction ID:</strong> ${shortcodeData.transaction_id}</p>
+            <p><strong>Payment Method:</strong> ${shortcodeData.payment_method}</p>
             <p><strong>Payment Status:</strong> <span class="status-badge">Pending Verification</span></p>
           </div>
 
@@ -133,7 +167,7 @@ function generateEmailHtml(
               ${itemsHtml}
               <tr class="total-row">
                 <td colspan="2" style="padding: 15px 12px; text-align: right;">Total:</td>
-                <td style="padding: 15px 12px; text-align: right;">₱${orderTotal.toLocaleString()}</td>
+                <td style="padding: 15px 12px; text-align: right;">₱${shortcodeData.order_total}</td>
               </tr>
             </tbody>
           </table>
@@ -141,8 +175,8 @@ function generateEmailHtml(
 
           ${template.show_tracking_button ? `
           <div style="text-align: center; margin: 25px 0;">
-            <a href="https://goldenbumps.com/track-order?id=${orderId.slice(0, 8)}" class="cta">
-              📦 ${template.tracking_button_text || 'Track Your Order'}
+            <a href="${shortcodeData.tracking_url}" class="cta">
+              📦 ${buttonText}
             </a>
           </div>
           ` : ''}
@@ -157,9 +191,7 @@ function generateEmailHtml(
           <p>Best regards,<br><strong>${template.sender_name}</strong></p>
         </div>
         <div class="footer">
-          <p>${template.footer_text || 'This is an automated message.'}</p>
-          <p>Please do not reply directly to this email.</p>
-          <p>For support, contact us at ${template.sender_email}</p>
+          <p>${footerText}</p>
         </div>
       </div>
     </body>
@@ -172,9 +204,17 @@ serve(async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Initialize Supabase client
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  let customerEmail = '';
+  let subject = '';
+
   try {
     const { 
-      customerEmail, 
+      customerEmail: email, 
       customerName, 
       orderId, 
       orderTotal, 
@@ -182,6 +222,9 @@ serve(async (req: Request): Promise<Response> => {
       transactionId,
       items 
     }: OrderConfirmationRequest = await req.json();
+
+    customerEmail = email;
+    const orderIdShort = orderId.slice(0, 8).toUpperCase();
 
     console.log(`Sending order confirmation to ${customerEmail} for order ${orderId}`);
 
@@ -193,14 +236,25 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Initialize Supabase client to fetch template
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
     // Fetch template from database
     const template = await getEmailTemplate(supabase, 'order_confirmation');
     
+    // Prepare shortcode data
+    const shortcodeData: Record<string, string> = {
+      customer_name: customerName || 'Valued Customer',
+      customer_email: customerEmail,
+      order_id: orderIdShort,
+      order_number: orderId,
+      order_total: orderTotal.toLocaleString(),
+      order_date: new Date().toLocaleDateString(),
+      payment_method: paymentMethod,
+      transaction_id: transactionId,
+      company_name: template?.company_name || 'Golden Bumps',
+      support_email: template?.support_email || template?.sender_email || 'support@goldenbumps.com',
+      tracking_url: `https://goldenbumps.com/track-order?id=${orderIdShort}`,
+      shop_url: 'https://goldenbumps.com',
+    };
+
     // Use template values or fallback to defaults
     const senderEmail = template?.sender_email || "support@goldenbumps.com";
     const senderName = template?.sender_name || "Golden Bumps";
@@ -210,6 +264,14 @@ serve(async (req: Request): Promise<Response> => {
 
     if (!hostingerEmail || !hostingerPassword) {
       console.error("Hostinger email credentials not configured");
+      await logEmail(supabase, {
+        order_id: orderId,
+        template_type: 'order_confirmation',
+        recipient_email: customerEmail,
+        subject: 'Order Confirmation',
+        status: 'failed',
+        error_message: 'Email credentials not configured',
+      });
       return new Response(
         JSON.stringify({ success: false, message: "Email credentials not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -228,21 +290,20 @@ serve(async (req: Request): Promise<Response> => {
       },
     });
 
-    // Generate email HTML from template or use default
+    // Generate email HTML and subject from template
     const emailHtml = template 
-      ? generateEmailHtml(template, customerName, orderId, orderTotal, paymentMethod, transactionId, items)
-      : generateDefaultEmailHtml(customerName, orderId, orderTotal, paymentMethod, transactionId, items);
+      ? generateEmailHtml(template, shortcodeData, items)
+      : generateDefaultEmailHtml(shortcodeData, items);
 
-    // Generate subject from template
-    const subject = template 
-      ? template.subject_template.replace('{ORDER_ID}', orderId.slice(0, 8).toUpperCase()).replace('#{ORDER_ID}', `#${orderId.slice(0, 8).toUpperCase()}`)
-      : `Order Confirmed - #${orderId.slice(0, 8).toUpperCase()} | Golden Bumps`;
+    subject = template 
+      ? replaceShortcodes(template.subject_template, { ...shortcodeData, ORDER_ID: orderIdShort })
+      : `Order Confirmed - #${orderIdShort} | Golden Bumps`;
 
     await client.send({
       from: `${senderName} <${senderEmail}>`,
       to: customerEmail,
       subject: subject,
-      content: `Thank you for your order! Order ID: ${orderId.slice(0, 8).toUpperCase()}, Total: ₱${orderTotal.toLocaleString()}. Your payment is being verified.`,
+      content: `Thank you for your order! Order ID: ${orderIdShort}, Total: ₱${orderTotal.toLocaleString()}. Your payment is being verified.`,
       html: emailHtml,
       headers: {
         "X-Priority": "1",
@@ -253,6 +314,15 @@ serve(async (req: Request): Promise<Response> => {
 
     await client.close();
 
+    // Log successful email
+    await logEmail(supabase, {
+      order_id: orderId,
+      template_type: 'order_confirmation',
+      recipient_email: customerEmail,
+      subject: subject,
+      status: 'sent',
+    });
+
     console.log(`Order confirmation sent successfully to ${customerEmail}`);
 
     return new Response(
@@ -261,6 +331,17 @@ serve(async (req: Request): Promise<Response> => {
     );
   } catch (error: any) {
     console.error("Error sending order confirmation:", error);
+    
+    // Log failed email
+    await logEmail(supabase, {
+      order_id: null,
+      template_type: 'order_confirmation',
+      recipient_email: customerEmail,
+      subject: subject || 'Order Confirmation',
+      status: 'failed',
+      error_message: error.message,
+    });
+
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -268,12 +349,17 @@ serve(async (req: Request): Promise<Response> => {
   }
 });
 
+function replaceShortcodes(text: string, data: Record<string, string>): string {
+  let result = text;
+  for (const [key, value] of Object.entries(data)) {
+    const regex = new RegExp(`\\{${key}\\}`, 'gi');
+    result = result.replace(regex, value || '');
+  }
+  return result;
+}
+
 function generateDefaultEmailHtml(
-  customerName: string, 
-  orderId: string, 
-  orderTotal: number,
-  paymentMethod: string,
-  transactionId: string,
+  shortcodeData: Record<string, string>,
   items: OrderItem[]
 ): string {
   const itemsHtml = items.map(item => `
@@ -319,13 +405,13 @@ function generateDefaultEmailHtml(
           <h1>🛒 Order Confirmed!</h1>
         </div>
         <div class="content">
-          <p>Dear <strong>${customerName || "Valued Customer"}</strong>,</p>
+          <p>Dear <strong>${shortcodeData.customer_name}</strong>,</p>
           <p>Thank you for your order! We've received your order and it's now being processed.</p>
           
           <div class="order-info">
-            <p><strong>Order ID:</strong> #${orderId.slice(0, 8).toUpperCase()}</p>
-            <p><strong>Transaction ID:</strong> ${transactionId}</p>
-            <p><strong>Payment Method:</strong> ${paymentMethod}</p>
+            <p><strong>Order ID:</strong> #${shortcodeData.order_id}</p>
+            <p><strong>Transaction ID:</strong> ${shortcodeData.transaction_id}</p>
+            <p><strong>Payment Method:</strong> ${shortcodeData.payment_method}</p>
             <p><strong>Payment Status:</strong> <span class="status-badge">Pending Verification</span></p>
           </div>
 
@@ -342,13 +428,13 @@ function generateDefaultEmailHtml(
               ${itemsHtml}
               <tr class="total-row">
                 <td colspan="2" style="padding: 15px 12px; text-align: right;">Total:</td>
-                <td style="padding: 15px 12px; text-align: right;">₱${orderTotal.toLocaleString()}</td>
+                <td style="padding: 15px 12px; text-align: right;">₱${shortcodeData.order_total}</td>
               </tr>
             </tbody>
           </table>
 
           <div style="text-align: center; margin: 25px 0;">
-            <a href="https://goldenbumps.com/track-order?id=${orderId.slice(0, 8)}" class="cta" style="display: inline-block; background: linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%); color: #1a1a1a; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+            <a href="${shortcodeData.tracking_url}" class="cta" style="display: inline-block; background: linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%); color: #1a1a1a; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
               📦 Track Your Order
             </a>
           </div>

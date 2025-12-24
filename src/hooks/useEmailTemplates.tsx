@@ -17,8 +17,26 @@ export interface EmailTemplate {
   tracking_button_text: string | null;
   footer_text: string | null;
   is_active: boolean;
+  support_email: string | null;
+  company_name: string | null;
+  company_logo_url: string | null;
+  help_center_url: string | null;
+  social_links: Record<string, string> | null;
+  custom_css: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface EmailLog {
+  id: string;
+  order_id: string | null;
+  template_type: string;
+  recipient_email: string;
+  subject: string;
+  status: string;
+  error_message: string | null;
+  sent_at: string;
+  created_at: string;
 }
 
 export const statusTypeLabels: Record<string, string> = {
@@ -30,6 +48,23 @@ export const statusTypeLabels: Record<string, string> = {
   cancelled: 'Order Cancelled',
   refunded: 'Order Refunded',
 };
+
+// Available shortcodes for email templates
+export const availableShortcodes = [
+  { code: '{customer_name}', description: 'Customer full name' },
+  { code: '{customer_email}', description: 'Customer email address' },
+  { code: '{order_id}', description: 'Order ID (short format)' },
+  { code: '{order_number}', description: 'Full order number' },
+  { code: '{order_total}', description: 'Order total amount' },
+  { code: '{order_date}', description: 'Order date' },
+  { code: '{payment_method}', description: 'Payment method used' },
+  { code: '{transaction_id}', description: 'Transaction ID' },
+  { code: '{company_name}', description: 'Your company name' },
+  { code: '{support_email}', description: 'Support email address' },
+  { code: '{tracking_url}', description: 'Order tracking URL' },
+  { code: '{shop_url}', description: 'Shop homepage URL' },
+  { code: '{refund_amount}', description: 'Refund amount (for refunds)' },
+];
 
 export function useEmailTemplates() {
   const { isAdmin } = useAuth();
@@ -87,5 +122,24 @@ export function useUpdateEmailTemplate() {
       queryClient.invalidateQueries({ queryKey: ['email-templates'] });
       queryClient.invalidateQueries({ queryKey: ['email-template'] });
     },
+  });
+}
+
+export function useEmailLogs() {
+  const { isAdmin } = useAuth();
+
+  return useQuery({
+    queryKey: ['email-logs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('email_logs')
+        .select('*')
+        .order('sent_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      return data as EmailLog[];
+    },
+    enabled: isAdmin,
   });
 }
