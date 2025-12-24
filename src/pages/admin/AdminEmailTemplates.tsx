@@ -70,6 +70,14 @@ export default function AdminEmailTemplates() {
       order_id_label: template.order_id_label || 'Order ID:',
       order_total_label: template.order_total_label || 'Order Total:',
       status_label: template.status_label || 'Status:',
+      text_color: template.text_color || '#333333',
+      background_color: template.background_color || '#ffffff',
+      button_color: template.button_color || '#D4AF37',
+      button_text_color: template.button_text_color || '#1a1a1a',
+      footer_background_color: template.footer_background_color || '#f9fafb',
+      refund_policy: template.refund_policy || '',
+      delivery_disclaimer: template.delivery_disclaimer || '',
+      support_hours: template.support_hours || '',
     });
   };
 
@@ -322,15 +330,77 @@ export default function AdminEmailTemplates() {
 
             <TabsContent value="design" className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label className="flex items-center gap-2"><Palette className="h-4 w-4" /> Header Color</Label>
-                <div className="flex gap-2">
-                  <Input type="color" value={formData.header_color || '#8B5CF6'} onChange={(e) => setFormData({ ...formData, header_color: e.target.value })} className="w-16 h-10 p-1 cursor-pointer" />
-                  <Input value={formData.header_color || '#8B5CF6'} onChange={(e) => setFormData({ ...formData, header_color: e.target.value })} className="flex-1" />
-                </div>
-              </div>
-              <div className="space-y-2">
                 <Label>Company Logo URL</Label>
                 <Input value={formData.company_logo_url || ''} onChange={(e) => setFormData({ ...formData, company_logo_url: e.target.value })} placeholder="https://example.com/logo.png" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2"><Palette className="h-4 w-4" /> Header Color</Label>
+                  <div className="flex gap-2">
+                    <Input type="color" value={formData.header_color || '#8B5CF6'} onChange={(e) => setFormData({ ...formData, header_color: e.target.value })} className="w-16 h-10 p-1 cursor-pointer" />
+                    <Input value={formData.header_color || '#8B5CF6'} onChange={(e) => setFormData({ ...formData, header_color: e.target.value })} className="flex-1" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Background Color</Label>
+                  <div className="flex gap-2">
+                    <Input type="color" value={formData.background_color || '#ffffff'} onChange={(e) => setFormData({ ...formData, background_color: e.target.value })} className="w-16 h-10 p-1 cursor-pointer" />
+                    <Input value={formData.background_color || '#ffffff'} onChange={(e) => setFormData({ ...formData, background_color: e.target.value })} className="flex-1" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Text Color</Label>
+                  <div className="flex gap-2">
+                    <Input type="color" value={formData.text_color || '#333333'} onChange={(e) => setFormData({ ...formData, text_color: e.target.value })} className="w-16 h-10 p-1 cursor-pointer" />
+                    <Input value={formData.text_color || '#333333'} onChange={(e) => setFormData({ ...formData, text_color: e.target.value })} className="flex-1" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Footer Background</Label>
+                  <div className="flex gap-2">
+                    <Input type="color" value={formData.footer_background_color || '#f9fafb'} onChange={(e) => setFormData({ ...formData, footer_background_color: e.target.value })} className="w-16 h-10 p-1 cursor-pointer" />
+                    <Input value={formData.footer_background_color || '#f9fafb'} onChange={(e) => setFormData({ ...formData, footer_background_color: e.target.value })} className="flex-1" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Button Color</Label>
+                  <div className="flex gap-2">
+                    <Input type="color" value={formData.button_color || '#D4AF37'} onChange={(e) => setFormData({ ...formData, button_color: e.target.value })} className="w-16 h-10 p-1 cursor-pointer" />
+                    <Input value={formData.button_color || '#D4AF37'} onChange={(e) => setFormData({ ...formData, button_color: e.target.value })} className="flex-1" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Button Text Color</Label>
+                  <div className="flex gap-2">
+                    <Input type="color" value={formData.button_text_color || '#1a1a1a'} onChange={(e) => setFormData({ ...formData, button_text_color: e.target.value })} className="w-16 h-10 p-1 cursor-pointer" />
+                    <Input value={formData.button_text_color || '#1a1a1a'} onChange={(e) => setFormData({ ...formData, button_text_color: e.target.value })} className="flex-1" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4 mt-4">
+                <h4 className="font-medium mb-4">Legal & Support Information</h4>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Support Hours</Label>
+                    <Input value={formData.support_hours || ''} onChange={(e) => setFormData({ ...formData, support_hours: e.target.value })} placeholder="10AM - 2AM Everyday" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Refund Policy</Label>
+                    <Textarea value={formData.refund_policy || ''} onChange={(e) => setFormData({ ...formData, refund_policy: e.target.value })} rows={2} placeholder="Refunds are processed within 24-48 hours after verification." />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Delivery Disclaimer</Label>
+                    <Textarea value={formData.delivery_disclaimer || ''} onChange={(e) => setFormData({ ...formData, delivery_disclaimer: e.target.value })} rows={2} placeholder="Digital products are delivered instantly via email and your account dashboard." />
+                  </div>
+                </div>
               </div>
             </TabsContent>
 
