@@ -1,14 +1,21 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Helmet } from 'react-helmet-async';
+import Layout from '@/components/layout/Layout';
+import HeroSection from '@/components/home/HeroSection';
+import CategorySection from '@/components/home/CategorySection';
+import FeaturedProducts from '@/components/home/FeaturedProducts';
 
-const Index = () => {
+export default function Index() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <>
+      <Helmet>
+        <title>GoldenBumps - Online Gaming Store | Gift Cards, Top-Ups & More</title>
+        <meta name="description" content="Your trusted source for digital gaming products. Buy gift cards, game top-ups, subscriptions, and gaming accounts with instant delivery." />
+      </Helmet>
+      <Layout>
+        <HeroSection />
+        <CategorySection />
+        <FeaturedProducts />
+      </Layout>
+    </>
   );
-};
-
-export default Index;
+}
