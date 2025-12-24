@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Zap, ArrowRight } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 const fullDescription = "Get instant access to gift cards, game top-ups, subscriptions, and premium gaming accounts. Fast, secure, and reliable.";
 
@@ -9,14 +9,29 @@ export default function HeroSection() {
   const [isVisible, setIsVisible] = useState(false);
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+  const sectionRef = useRef<HTMLElement>(null);
   
   useEffect(() => {
     setIsVisible(true);
-    // Start typing after headline animation completes
     const typingDelay = setTimeout(() => {
       setIsTyping(true);
     }, 900);
     return () => clearTimeout(typingDelay);
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (sectionRef.current) {
+        const rect = sectionRef.current.getBoundingClientRect();
+        if (rect.bottom > 0) {
+          setScrollY(window.scrollY);
+        }
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
@@ -33,21 +48,36 @@ export default function HeroSection() {
   const titleWords = ['LEVEL', 'UP', 'YOUR'];
   const gradientWords = ['GAMING', 'EXPERIENCE'];
   return (
-    <section className="relative min-h-[700px] flex items-center overflow-hidden">
+    <section ref={sectionRef} className="relative min-h-[700px] flex items-center overflow-hidden">
       {/* Red to Black Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/40 via-primary/20 to-background" />
       <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
       
-      {/* Animated Glow Orbs */}
-      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/30 rounded-full blur-[120px] animate-pulse" />
-      <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-destructive/20 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/15 rounded-full blur-[150px] animate-pulse" style={{ animationDelay: '0.5s' }} />
+      {/* Animated Glow Orbs with Parallax */}
+      <div 
+        className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/30 rounded-full blur-[120px] animate-pulse transition-transform duration-100"
+        style={{ transform: `translateY(${scrollY * 0.3}px)` }}
+      />
+      <div 
+        className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-destructive/20 rounded-full blur-[100px] animate-pulse transition-transform duration-100"
+        style={{ transform: `translateY(${scrollY * 0.15}px)`, animationDelay: '1s' }}
+      />
+      <div 
+        className="absolute top-1/2 left-1/2 w-[600px] h-[600px] bg-primary/15 rounded-full blur-[150px] animate-pulse transition-transform duration-100"
+        style={{ transform: `translate(-50%, calc(-50% + ${scrollY * 0.2}px))`, animationDelay: '0.5s' }}
+      />
       
-      {/* Radial Glow Effect */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.15)_0%,transparent_70%)]" />
+      {/* Radial Glow Effect with Parallax */}
+      <div 
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.15)_0%,transparent_70%)] transition-transform duration-100"
+        style={{ transform: `translateY(${scrollY * 0.1}px)` }}
+      />
       
-      {/* Grid Pattern Overlay */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-30" />
+      {/* Grid Pattern Overlay with Parallax */}
+      <div 
+        className="absolute inset-0 bg-grid-pattern opacity-30 transition-transform duration-100"
+        style={{ transform: `translateY(${scrollY * 0.05}px)` }}
+      />
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-3xl mx-auto text-center">
