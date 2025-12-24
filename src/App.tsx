@@ -28,6 +28,8 @@ import AdminSiteSettings from "./pages/admin/AdminSiteSettings";
 import AdminBrands from "./pages/admin/AdminBrands";
 import AdminNavigationMenu from "./pages/admin/AdminNavigationMenu";
 import AdminHomepageSections from "./pages/admin/AdminHomepageSections";
+import AdminTestimonials from "./pages/admin/AdminTestimonials";
+import AdminPromotionalBanners from "./pages/admin/AdminPromotionalBanners";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -88,6 +90,8 @@ function AnimatedRoutes() {
           <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
           <Route path="/admin/navigation-menu" element={<AdminNavigationMenu />} />
           <Route path="/admin/homepage-sections" element={<AdminHomepageSections />} />
+          <Route path="/admin/testimonials" element={<AdminTestimonials />} />
+          <Route path="/admin/promotional-banners" element={<AdminPromotionalBanners />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </motion.div>

@@ -7,6 +7,7 @@ import BestSellersSection from '@/components/home/BestSellersSection';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
 import NewArrivalsSection from '@/components/home/NewArrivalsSection';
 import BrandsSection from '@/components/home/BrandsSection';
+import TestimonialsSection from '@/components/home/TestimonialsSection';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 export default function Index() {
@@ -28,6 +29,7 @@ export default function Index() {
         <BestSellersSection />
         <FeaturedProducts />
         <NewArrivalsSection />
+        <TestimonialsSection />
         <BrandsSection />
       </Layout>
     </>
