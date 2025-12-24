@@ -36,6 +36,94 @@ const overlayVariants = {
   exit: { opacity: 0 },
 };
 
+const textContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.3,
+    },
+  },
+  exit: {
+    opacity: 0,
+    transition: {
+      staggerChildren: 0.05,
+      staggerDirection: -1,
+    },
+  },
+};
+
+const titleVariants = {
+  hidden: { 
+    opacity: 0, 
+    y: 60,
+    rotateX: -45,
+    filter: 'blur(10px)',
+  },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    rotateX: 0,
+    filter: 'blur(0px)',
+    transition: {
+      duration: 0.8,
+      ease: 'easeOut' as const,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -30,
+    filter: 'blur(5px)',
+    transition: {
+      duration: 0.3,
+    },
+  },
+};
+
+const subtitleVariants = {
+  hidden: { 
+    opacity: 0, 
+    y: 40,
+    x: -20,
+  },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    x: 0,
+    transition: {
+      duration: 0.6,
+      ease: 'easeOut' as const,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -20,
+    transition: {
+      duration: 0.2,
+    },
+  },
+};
+
+const decoratorVariants = {
+  hidden: { scaleX: 0, opacity: 0 },
+  visible: { 
+    scaleX: 1, 
+    opacity: 1,
+    transition: {
+      duration: 0.5,
+      ease: 'easeOut' as const,
+    },
+  },
+  exit: {
+    scaleX: 0,
+    opacity: 0,
+    transition: {
+      duration: 0.2,
+    },
+  },
+};
+
 const swipeConfidenceThreshold = 10000;
 const swipePower = (offset: number, velocity: number) => {
   return Math.abs(offset) * velocity;
@@ -147,6 +235,68 @@ export default function HeroCarousel() {
           
           {/* Vignette effect */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,hsl(var(--background)/0.7)_100%)]" />
+          
+          {/* Text Overlay with Staggered Animation */}
+          {(currentImage.title || currentImage.subtitle) && (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`text-${page}`}
+                className="absolute bottom-32 left-8 md:left-16 z-10 max-w-lg"
+                variants={textContainerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                {/* Decorative line */}
+                <motion.div 
+                  className="w-16 h-1 bg-gradient-to-r from-primary to-destructive mb-4 origin-left rounded-full"
+                  variants={decoratorVariants}
+                />
+                
+                {/* Title with character split animation */}
+                {currentImage.title && (
+                  <motion.h2
+                    className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-foreground mb-3 drop-shadow-2xl"
+                    variants={titleVariants}
+                    style={{ perspective: 1000 }}
+                  >
+                    <span className="inline-block bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text">
+                      {currentImage.title}
+                    </span>
+                  </motion.h2>
+                )}
+                
+                {/* Subtitle */}
+                {currentImage.subtitle && (
+                  <motion.p
+                    className="text-lg md:text-xl text-muted-foreground max-w-md backdrop-blur-sm bg-background/20 px-4 py-2 rounded-lg border border-border/20"
+                    variants={subtitleVariants}
+                  >
+                    {currentImage.subtitle}
+                  </motion.p>
+                )}
+                
+                {/* CTA Button if link exists */}
+                {currentImage.link_url && (
+                  <motion.a
+                    href={currentImage.link_url}
+                    className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-gradient-to-r from-primary to-destructive text-primary-foreground font-semibold rounded-lg shadow-xl hover:shadow-primary/25 transition-all duration-300"
+                    variants={subtitleVariants}
+                    whileHover={{ scale: 1.05, x: 5 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Explore Now
+                    <motion.span
+                      animate={{ x: [0, 5, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    >
+                      →
+                    </motion.span>
+                  </motion.a>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          )}
         </motion.div>
       </AnimatePresence>
 
