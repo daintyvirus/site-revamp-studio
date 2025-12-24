@@ -109,11 +109,15 @@ serve(async (req: Request): Promise<Response> => {
     `;
 
     await client.send({
-      from: hostingerEmail,
+      from: `Golden Bumps <${hostingerEmail}>`,
       to: customerEmail,
       subject: `Payment ${paymentStatus === "paid" ? "Confirmed" : paymentStatus === "failed" ? "Failed" : "Update"} - Order #${orderId.slice(0, 8).toUpperCase()}`,
       content: statusMessage,
       html: emailHtml,
+      headers: {
+        "X-Priority": "1",
+        "X-Mailer": "Golden Bumps Store",
+      },
     });
 
     await client.close();
