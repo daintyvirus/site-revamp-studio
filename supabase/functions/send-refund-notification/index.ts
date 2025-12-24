@@ -21,6 +21,12 @@ interface EmailTemplate {
   show_tracking_button: boolean;
   tracking_button_text: string | null;
   footer_text: string | null;
+  support_email: string | null;
+  company_name: string | null;
+  company_logo_url: string | null;
+  help_center_url: string | null;
+  social_links: any;
+  custom_css: string | null;
   is_active: boolean;
 }
 
@@ -47,7 +53,61 @@ async function getEmailTemplate(supabase: any, statusType: string): Promise<Emai
   return data;
 }
 
+async function logEmailSent(
+  supabase: any,
+  recipientEmail: string,
+  subject: string,
+  templateType: string,
+  orderId: string,
+  status: 'sent' | 'failed',
+  errorMessage?: string
+) {
+  try {
+    const { error } = await supabase.from('email_logs').insert({
+      recipient_email: recipientEmail,
+      subject: subject,
+      template_type: templateType,
+      order_id: orderId,
+      status: status,
+      error_message: errorMessage || null,
+    });
+    if (error) {
+      console.error('Error logging email:', error);
+    }
+  } catch (e) {
+    console.error('Exception logging email:', e);
+  }
+}
+
+function replaceShortcodes(
+  text: string,
+  customerName: string,
+  orderId: string,
+  orderTotal: number,
+  template: EmailTemplate | null,
+  refundAmount?: number
+): string {
+  const companyName = template?.company_name || 'Golden Bumps';
+  const supportEmail = template?.support_email || template?.sender_email || 'support@goldenbumps.com';
+  const displayRefundAmount = refundAmount || orderTotal;
+  
+  return text
+    .replace(/\{customer_name\}/gi, customerName || 'Valued Customer')
+    .replace(/\{order_id\}/gi, orderId.slice(0, 8).toUpperCase())
+    .replace(/\{order_total\}/gi, `₱${orderTotal.toLocaleString()}`)
+    .replace(/\{refund_amount\}/gi, `₱${displayRefundAmount.toLocaleString()}`)
+    .replace(/\{company_name\}/gi, companyName)
+    .replace(/\{support_email\}/gi, supportEmail)
+    .replace(/\{current_year\}/gi, new Date().getFullYear().toString())
+    .replace(/\{order_status\}/gi, 'Refunded');
+}
+
 function generateEmailHtml(template: EmailTemplate, customerName: string, orderId: string, orderTotal: number, refundAmount: number): string {
+  const processedBodyIntro = replaceShortcodes(template.body_intro, customerName, orderId, orderTotal, template, refundAmount);
+  const processedBodyContent = template.body_content ? replaceShortcodes(template.body_content, customerName, orderId, orderTotal, template, refundAmount) : '';
+  const processedFooter = template.footer_text ? replaceShortcodes(template.footer_text, customerName, orderId, orderTotal, template, refundAmount) : 'This is an automated message.';
+  const companyName = template.company_name || 'Golden Bumps';
+
   return `
     <!DOCTYPE html>
     <html>
@@ -68,17 +128,19 @@ function generateEmailHtml(template: EmailTemplate, customerName: string, orderI
         .cta { display: inline-block; background: linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%); color: #1a1a1a; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; }
         .footer { background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none; }
         .footer p { margin: 5px 0; color: #6b7280; font-size: 12px; }
+        ${template.custom_css || ''}
       </style>
     </head>
     <body>
       <div class="container">
+        ${template.company_logo_url ? `<div style="text-align: center; padding: 20px 0;"><img src="${template.company_logo_url}" alt="${companyName}" style="max-height: 60px;"></div>` : ''}
         <div class="header">
           <h1>${template.header_title}</h1>
         </div>
         <div class="content">
           <p>Dear <strong>${customerName || "Valued Customer"}</strong>,</p>
-          <p>${template.body_intro}</p>
-          ${template.body_content ? `<p>${template.body_content}</p>` : ''}
+          <p>${processedBodyIntro}</p>
+          ${processedBodyContent ? `<p>${processedBodyContent}</p>` : ''}
           
           <div class="refund-amount">
             <p style="margin: 0; font-size: 14px; opacity: 0.9;">Refund Amount</p>
@@ -112,9 +174,8 @@ function generateEmailHtml(template: EmailTemplate, customerName: string, orderI
           <p>Best regards,<br><strong>${template.sender_name}</strong></p>
         </div>
         <div class="footer">
-          <p>${template.footer_text || 'This is an automated message.'}</p>
-          <p>Please do not reply directly to this email.</p>
-          <p>For support, contact us at ${template.sender_email}</p>
+          <p>${processedFooter}</p>
+          ${template.help_center_url ? `<p><a href="${template.help_center_url}" style="color: #6b7280;">Help Center</a></p>` : ''}
         </div>
       </div>
     </body>
@@ -127,8 +188,22 @@ serve(async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Initialize Supabase client
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  let customerEmail = '';
+  let orderId = '';
+  let subject = '';
+
   try {
-    const { customerEmail, customerName, orderId, orderTotal, refundAmount }: RefundNotificationRequest = await req.json();
+    const body: RefundNotificationRequest = await req.json();
+    customerEmail = body.customerEmail;
+    const customerName = body.customerName;
+    orderId = body.orderId;
+    const orderTotal = body.orderTotal;
+    const refundAmount = body.refundAmount;
 
     console.log(`Sending refund notification to ${customerEmail} for order ${orderId}`);
 
@@ -139,11 +214,6 @@ serve(async (req: Request): Promise<Response> => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Initialize Supabase client to fetch template
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch template from database
     const template = await getEmailTemplate(supabase, 'refunded');
@@ -157,6 +227,7 @@ serve(async (req: Request): Promise<Response> => {
 
     if (!hostingerEmail || !hostingerPassword) {
       console.error("Hostinger email credentials not configured");
+      await logEmailSent(supabase, customerEmail, 'Refund Notification', 'refunded', orderId, 'failed', 'Email credentials not configured');
       return new Response(
         JSON.stringify({ success: false, message: "Email credentials not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -182,9 +253,9 @@ serve(async (req: Request): Promise<Response> => {
       ? generateEmailHtml(template, customerName, orderId, orderTotal, displayRefundAmount)
       : generateDefaultEmailHtml(customerName, orderId, orderTotal, displayRefundAmount);
 
-    // Generate subject from template
-    const subject = template 
-      ? template.subject_template.replace('{ORDER_ID}', orderId.slice(0, 8).toUpperCase()).replace('#{ORDER_ID}', `#${orderId.slice(0, 8).toUpperCase()}`)
+    // Generate subject from template with shortcode support
+    subject = template 
+      ? replaceShortcodes(template.subject_template, customerName, orderId, orderTotal, template, displayRefundAmount)
       : `Refund Processed - ₱${displayRefundAmount.toLocaleString()} - #${orderId.slice(0, 8).toUpperCase()} | Golden Bumps`;
 
     await client.send({
@@ -202,6 +273,9 @@ serve(async (req: Request): Promise<Response> => {
 
     await client.close();
 
+    // Log successful email
+    await logEmailSent(supabase, customerEmail, subject, 'refunded', orderId, 'sent');
+
     console.log(`Refund notification sent successfully to ${customerEmail}`);
 
     return new Response(
@@ -210,6 +284,10 @@ serve(async (req: Request): Promise<Response> => {
     );
   } catch (error: any) {
     console.error("Error sending refund notification:", error);
+    
+    // Log failed email
+    await logEmailSent(supabase, customerEmail, subject || 'Refund Notification', 'refunded', orderId, 'failed', error.message);
+    
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
