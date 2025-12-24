@@ -1,8 +1,71 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { useActivePromotionalBanners } from '@/hooks/usePromotionalBanners';
+import { ChevronLeft, ChevronRight, X, Clock } from 'lucide-react';
+import { useActivePromotionalBanners, PromotionalBanner as BannerType } from '@/hooks/usePromotionalBanners';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+
+interface CountdownProps {
+  endTime: string;
+  label: string | null;
+}
+
+function CountdownTimer({ endTime, label }: CountdownProps) {
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const difference = new Date(endTime).getTime() - new Date().getTime();
+      
+      if (difference <= 0) {
+        setIsExpired(true);
+        return;
+      }
+
+      setTimeLeft({
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
+      });
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(timer);
+  }, [endTime]);
+
+  if (isExpired) return null;
+
+  return (
+    <div className="flex items-center gap-2 ml-3">
+      <Clock className="h-4 w-4" />
+      <span className="text-xs md:text-sm font-medium">{label || 'Ends in:'}</span>
+      <div className="flex items-center gap-1">
+        {timeLeft.days > 0 && (
+          <span className="bg-black/20 px-1.5 py-0.5 rounded text-xs font-bold">
+            {timeLeft.days}d
+          </span>
+        )}
+        <span className="bg-black/20 px-1.5 py-0.5 rounded text-xs font-bold">
+          {String(timeLeft.hours).padStart(2, '0')}h
+        </span>
+        <span className="bg-black/20 px-1.5 py-0.5 rounded text-xs font-bold">
+          {String(timeLeft.minutes).padStart(2, '0')}m
+        </span>
+        <span className="bg-black/20 px-1.5 py-0.5 rounded text-xs font-bold">
+          {String(timeLeft.seconds).padStart(2, '0')}s
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function PromotionalBanner() {
   const { data: banners, isLoading } = useActivePromotionalBanners();
@@ -32,8 +95,16 @@ export default function PromotionalBanner() {
     setCurrentIndex((prev) => (prev + 1) % banners.length);
   };
 
-  const BannerContent = () => (
-    <span className="text-sm md:text-base font-medium">{currentBanner.text}</span>
+  const BannerContent = ({ banner }: { banner: BannerType }) => (
+    <div className="flex items-center justify-center flex-wrap gap-1">
+      <span className="text-sm md:text-base font-medium">{banner.text}</span>
+      {banner.countdown_enabled && banner.countdown_end_time && (
+        <CountdownTimer 
+          endTime={banner.countdown_end_time} 
+          label={banner.countdown_label} 
+        />
+      )}
+    </div>
   );
 
   return (
@@ -71,10 +142,10 @@ export default function PromotionalBanner() {
                 to={currentBanner.link_url} 
                 className="hover:underline inline-flex items-center gap-2"
               >
-                <BannerContent />
+                <BannerContent banner={currentBanner} />
               </Link>
             ) : (
-              <BannerContent />
+              <BannerContent banner={currentBanner} />
             )}
           </motion.div>
         </AnimatePresence>

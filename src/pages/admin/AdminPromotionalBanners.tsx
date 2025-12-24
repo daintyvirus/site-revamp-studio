@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Clock } from 'lucide-react';
 import { usePromotionalBanners, useCreatePromotionalBanner, useUpdatePromotionalBanner, useDeletePromotionalBanner, PromotionalBanner } from '@/hooks/usePromotionalBanners';
 
 export default function AdminPromotionalBanners() {
@@ -27,6 +27,9 @@ export default function AdminPromotionalBanners() {
     sort_order: 0,
     starts_at: '',
     ends_at: '',
+    countdown_enabled: false,
+    countdown_end_time: '',
+    countdown_label: 'Offer ends in:',
   });
 
   const resetForm = () => {
@@ -39,6 +42,9 @@ export default function AdminPromotionalBanners() {
       sort_order: 0,
       starts_at: '',
       ends_at: '',
+      countdown_enabled: false,
+      countdown_end_time: '',
+      countdown_label: 'Offer ends in:',
     });
     setEditingBanner(null);
   };
@@ -54,6 +60,9 @@ export default function AdminPromotionalBanners() {
       sort_order: banner.sort_order,
       starts_at: banner.starts_at ? banner.starts_at.slice(0, 16) : '',
       ends_at: banner.ends_at ? banner.ends_at.slice(0, 16) : '',
+      countdown_enabled: banner.countdown_enabled,
+      countdown_end_time: banner.countdown_end_time ? banner.countdown_end_time.slice(0, 16) : '',
+      countdown_label: banner.countdown_label || 'Offer ends in:',
     });
     setIsDialogOpen(true);
   };
@@ -66,6 +75,8 @@ export default function AdminPromotionalBanners() {
       link_url: formData.link_url || null,
       starts_at: formData.starts_at ? new Date(formData.starts_at).toISOString() : null,
       ends_at: formData.ends_at ? new Date(formData.ends_at).toISOString() : null,
+      countdown_end_time: formData.countdown_end_time ? new Date(formData.countdown_end_time).toISOString() : null,
+      countdown_label: formData.countdown_label || null,
     };
 
     if (editingBanner) {
@@ -90,13 +101,13 @@ export default function AdminPromotionalBanners() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">Promotional Banners</h1>
-            <p className="text-muted-foreground">Manage announcement banners at the top of the page</p>
+            <p className="text-muted-foreground">Manage announcement banners with countdown timers</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
               <Button><Plus className="h-4 w-4 mr-2" /> Add Banner</Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingBanner ? 'Edit Banner' : 'Add Banner'}</DialogTitle>
               </DialogHeader>
@@ -150,9 +161,47 @@ export default function AdminPromotionalBanners() {
                     </div>
                   </div>
                 </div>
+
+                {/* Countdown Timer Section */}
+                <Card className="border-dashed">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-primary" />
+                        <CardTitle className="text-base">Countdown Timer</CardTitle>
+                      </div>
+                      <Switch
+                        checked={formData.countdown_enabled}
+                        onCheckedChange={(checked) => setFormData({ ...formData, countdown_enabled: checked })}
+                      />
+                    </div>
+                  </CardHeader>
+                  {formData.countdown_enabled && (
+                    <CardContent className="space-y-4 pt-0">
+                      <div className="space-y-2">
+                        <Label>Countdown End Time *</Label>
+                        <Input
+                          type="datetime-local"
+                          value={formData.countdown_end_time}
+                          onChange={(e) => setFormData({ ...formData, countdown_end_time: e.target.value })}
+                          required={formData.countdown_enabled}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Countdown Label</Label>
+                        <Input
+                          value={formData.countdown_label}
+                          onChange={(e) => setFormData({ ...formData, countdown_label: e.target.value })}
+                          placeholder="Offer ends in:"
+                        />
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Starts At (Optional)</Label>
+                    <Label>Display From (Optional)</Label>
                     <Input
                       type="datetime-local"
                       value={formData.starts_at}
@@ -160,7 +209,7 @@ export default function AdminPromotionalBanners() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Ends At (Optional)</Label>
+                    <Label>Display Until (Optional)</Label>
                     <Input
                       type="datetime-local"
                       value={formData.ends_at}
@@ -204,6 +253,7 @@ export default function AdminPromotionalBanners() {
                   <TableRow>
                     <TableHead>Preview</TableHead>
                     <TableHead>Text</TableHead>
+                    <TableHead>Countdown</TableHead>
                     <TableHead>Schedule</TableHead>
                     <TableHead>Active</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -224,6 +274,20 @@ export default function AdminPromotionalBanners() {
                         </div>
                       </TableCell>
                       <TableCell className="max-w-xs truncate">{banner.text}</TableCell>
+                      <TableCell>
+                        {banner.countdown_enabled ? (
+                          <div className="flex items-center gap-1 text-xs">
+                            <Clock className="h-3 w-3 text-primary" />
+                            <span className="text-muted-foreground">
+                              {banner.countdown_end_time 
+                                ? new Date(banner.countdown_end_time).toLocaleString() 
+                                : 'Not set'}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Disabled</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {banner.starts_at || banner.ends_at ? (
                           <>

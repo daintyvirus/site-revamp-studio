@@ -755,6 +755,9 @@ export type Database = {
       promotional_banners: {
         Row: {
           background_color: string | null
+          countdown_enabled: boolean
+          countdown_end_time: string | null
+          countdown_label: string | null
           created_at: string
           ends_at: string | null
           id: string
@@ -768,6 +771,9 @@ export type Database = {
         }
         Insert: {
           background_color?: string | null
+          countdown_enabled?: boolean
+          countdown_end_time?: string | null
+          countdown_label?: string | null
           created_at?: string
           ends_at?: string | null
           id?: string
@@ -781,6 +787,9 @@ export type Database = {
         }
         Update: {
           background_color?: string | null
+          countdown_enabled?: boolean
+          countdown_end_time?: string | null
+          countdown_label?: string | null
           created_at?: string
           ends_at?: string | null
           id?: string
