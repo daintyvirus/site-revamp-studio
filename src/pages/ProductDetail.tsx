@@ -153,10 +153,12 @@ export default function ProductDetail() {
           {/* Product Image - Kryptomate Style */}
           <div className="relative">
             <div className="bg-card/30 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
-              {/* Instant Delivery Badge */}
+              {/* Delivery Time Badge */}
               <div className="flex items-center gap-2 text-primary mb-4">
                 <Clock className="h-4 w-4" />
-                <span className="text-sm font-medium uppercase tracking-wider">Instant Delivery : 0 - 24 Hours</span>
+                <span className="text-sm font-medium uppercase tracking-wider">
+                  {(product as any).delivery_time || 'Instant Delivery'}
+                </span>
               </div>
 
               {/* Image Container */}

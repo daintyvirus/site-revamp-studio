@@ -2,42 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Kryptomate-Inspired Gaming Theme */
+/* Red & Black Gaming Theme */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @layer base {
   :root {
-    /* Light Theme - Clean (Kryptomate-inspired contrast) */
-    --background: 220 18% 98%;
-    --foreground: 230 22% 12%;
+    /* Light Theme - Clean White with Red Accents */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 230 22% 12%;
+    --card-foreground: 0 0% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 230 22% 12%;
+    --popover-foreground: 0 0% 8%;
 
-    /* Primary (emerald) */
-    --primary: 145 62% 40%;
+    /* Primary (Crimson Red) */
+    --primary: 0 75% 50%;
     --primary-foreground: 0 0% 100%;
 
     /* Soft neutral surfaces */
-    --secondary: 230 18% 94%;
-    --secondary-foreground: 230 22% 18%;
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 15%;
 
-    --muted: 230 18% 96%;
-    --muted-foreground: 230 10% 45%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
 
-    /* Accent (magenta) */
-    --accent: 318 70% 52%;
+    /* Accent (Deep Red) */
+    --accent: 0 85% 45%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 230 18% 88%;
-    --input: 230 18% 88%;
-    --ring: 145 62% 40%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 0 75% 50%;
 
     --radius: 0.75rem;
 
@@ -45,74 +45,79 @@
     --success: 145 62% 40%;
     --success-foreground: 0 0% 100%;
     --warning: 38 95% 50%;
-    --warning-foreground: 230 22% 12%;
+    --warning-foreground: 0 0% 8%;
 
-    /* Sidebar */
-    --sidebar-background: 330 50% 24%;
+    /* Sidebar - Dark Red */
+    --sidebar-background: 0 50% 12%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 145 62% 44%;
+    --sidebar-primary: 0 75% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 330 45% 34%;
+    --sidebar-accent: 0 45% 20%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 330 35% 28%;
-    --sidebar-ring: 145 62% 44%;
+    --sidebar-border: 0 35% 18%;
+    --sidebar-ring: 0 75% 55%;
 
-    --chart-1: 145 62% 40%;
+    --chart-1: 0 75% 50%;
     --chart-2: 38 95% 50%;
-    --chart-3: 318 70% 52%;
+    --chart-3: 0 85% 45%;
     --chart-4: 220 60% 50%;
-    --chart-5: 0 72% 51%;
+    --chart-5: 145 62% 40%;
   }
 
   .dark {
-    /* Dark Theme - Deep Navy + Emerald + Magenta */
-    --background: 235 28% 8%;
-    --foreground: 220 15% 92%;
+    /* Dark Theme - Deep Black with Red Glow */
+    --background: 0 0% 5%;
+    --foreground: 0 0% 95%;
 
-    --card: 235 24% 12%;
-    --card-foreground: 220 15% 92%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 235 24% 13%;
-    --popover-foreground: 220 15% 92%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 145 72% 45%;
-    --primary-foreground: 235 28% 8%;
+    /* Primary (Bright Crimson) */
+    --primary: 0 80% 55%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 235 22% 16%;
-    --secondary-foreground: 220 15% 90%;
+    /* Dark surfaces */
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 90%;
 
-    --muted: 235 20% 14%;
-    --muted-foreground: 220 10% 58%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 60%;
 
-    --accent: 320 75% 58%;
-    --accent-foreground: 235 28% 8%;
+    /* Accent (Vivid Red) */
+    --accent: 0 90% 50%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 235 18% 20%;
-    --input: 235 18% 22%;
-    --ring: 145 72% 45%;
+    --border: 0 0% 15%;
+    --input: 0 0% 18%;
+    --ring: 0 80% 55%;
 
+    /* Success & Warning */
     --success: 145 72% 45%;
-    --success-foreground: 235 28% 8%;
+    --success-foreground: 0 0% 100%;
     --warning: 38 95% 55%;
-    --warning-foreground: 235 28% 8%;
+    --warning-foreground: 0 0% 8%;
 
-    --sidebar-background: 330 45% 22%;
+    /* Sidebar - Deep Red/Black */
+    --sidebar-background: 0 40% 10%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 145 72% 48%;
-    --sidebar-primary-foreground: 235 28% 8%;
-    --sidebar-accent: 330 42% 30%;
+    --sidebar-primary: 0 80% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 35% 18%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 330 35% 28%;
-    --sidebar-ring: 145 72% 48%;
+    --sidebar-border: 0 30% 15%;
+    --sidebar-ring: 0 80% 55%;
 
-    --chart-1: 145 72% 45%;
+    --chart-1: 0 80% 55%;
     --chart-2: 38 95% 55%;
-    --chart-3: 320 75% 58%;
+    --chart-3: 0 90% 50%;
     --chart-4: 220 70% 55%;
-    --chart-5: 0 72% 55%;
+    --chart-5: 145 72% 45%;
   }
 }
 
@@ -134,8 +139,8 @@
 
   .dark body {
     background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(var(--accent) / 0.22), transparent),
-      radial-gradient(ellipse 60% 40% at 100% 100%, hsl(var(--primary) / 0.08), transparent);
+      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(var(--primary) / 0.15), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 100%, hsl(var(--accent) / 0.08), transparent);
     background-attachment: fixed;
   }
 
@@ -162,12 +167,12 @@
 }
 
 @layer utilities {
-  /* Profile Sidebar Gradient - Kryptomate Style */
+  /* Profile Sidebar Gradient - Red/Black */
   .profile-sidebar-gradient {
     background: linear-gradient(180deg, 
-      hsl(330 50% 28%) 0%, 
-      hsl(335 45% 22%) 50%, 
-      hsl(340 40% 18%) 100%
+      hsl(0 50% 15%) 0%, 
+      hsl(0 45% 10%) 50%, 
+      hsl(0 40% 8%) 100%
     );
   }
 
@@ -179,11 +184,11 @@
     );
   }
 
-  /* Gold Accent Gradient */
+  /* Red Accent Gradient */
   .gold-gradient {
     background: linear-gradient(135deg, 
-      hsl(40 90% 55%) 0%, 
-      hsl(35 85% 50%) 100%
+      hsl(0 90% 55%) 0%, 
+      hsl(0 85% 45%) 100%
     );
   }
 
@@ -236,12 +241,12 @@
   /* Gradient Text */
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(145 70% 50%), hsl(145 65% 40%));
+    background-image: linear-gradient(135deg, hsl(0 85% 55%), hsl(0 75% 45%));
   }
 
   .text-gradient-gold {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(40 90% 60%), hsl(35 85% 50%));
+    background-image: linear-gradient(135deg, hsl(0 90% 60%), hsl(0 85% 50%));
   }
 
   /* Primary Glow Effect */
@@ -250,7 +255,7 @@
   }
 
   .glow-purple {
-    box-shadow: 0 8px 30px -5px hsl(330 50% 40% / 0.4);
+    box-shadow: 0 8px 30px -5px hsl(0 50% 40% / 0.4);
   }
 
   /* Button Shine Effect */
@@ -274,13 +279,13 @@
     @apply left-full;
   }
 
-  /* Status Badge Styles - Kryptomate Inspired */
+  /* Status Badge Styles */
   .status-completed {
-    @apply bg-primary/20 text-primary border border-primary/30;
+    @apply bg-success/20 text-success border border-success/30;
   }
 
   .status-delivered {
-    @apply bg-primary/20 text-primary border border-primary/30;
+    @apply bg-success/20 text-success border border-success/30;
   }
 
   .status-pending {
@@ -288,7 +293,7 @@
   }
 
   .status-paid {
-    @apply bg-primary/20 text-primary border border-primary/30;
+    @apply bg-success/20 text-success border border-success/30;
   }
 
   /* Animations */

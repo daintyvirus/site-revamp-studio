@@ -21,7 +21,7 @@ import {
 import { useCategories, useBrands, useCreateProduct, useUpdateProduct, useCreateVariant, useUpdateVariant, useDeleteVariant } from '@/hooks/useProducts';
 import type { Product, ProductVariant, ProductImage } from '@/types/database';
 import { toast } from 'sonner';
-import { Clock, Zap, CalendarIcon, Plus, Trash2, Package } from 'lucide-react';
+import { Clock, Zap, CalendarIcon, Plus, Trash2, Package, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ProductImageGallery from './ProductImageGallery';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,6 +44,7 @@ const productSchema = z.object({
   flash_sale_enabled: z.boolean(),
   sale_start_date: z.string().optional().nullable(),
   sale_end_date: z.string().optional().nullable(),
+  delivery_time: z.string().optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -142,6 +143,7 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
       flash_sale_enabled: product?.flash_sale_enabled ?? false,
       sale_start_date: product?.sale_start_date ?? null,
       sale_end_date: product?.sale_end_date ?? null,
+      delivery_time: (product as any)?.delivery_time ?? 'Instant Delivery',
     },
   });
 
@@ -258,6 +260,7 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
         flash_sale_enabled: data.flash_sale_enabled,
         sale_start_date: data.sale_start_date ? new Date(data.sale_start_date).toISOString() : null,
         sale_end_date: data.sale_end_date ? new Date(data.sale_end_date).toISOString() : null,
+        delivery_time: data.delivery_time || 'Instant Delivery',
       };
 
       let productId = product?.id;
@@ -676,6 +679,39 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
           </Select>
         </div>
       </div>
+
+      {/* Delivery Time Section */}
+      <Card className="border-success/30">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Timer className="h-5 w-5 text-success" />
+            Delivery Time
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Estimated delivery time shown to customers
+          </p>
+        </CardHeader>
+        <CardContent>
+          <Select
+            value={watch('delivery_time') || 'Instant Delivery'}
+            onValueChange={(val) => setValue('delivery_time', val)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select delivery time" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Instant Delivery">⚡ Instant Delivery</SelectItem>
+              <SelectItem value="1-2 Hours">🕐 1-2 Hours</SelectItem>
+              <SelectItem value="2-4 Hours">🕑 2-4 Hours</SelectItem>
+              <SelectItem value="4-8 Hours">🕓 4-8 Hours</SelectItem>
+              <SelectItem value="8-24 Hours">🕗 8-24 Hours</SelectItem>
+              <SelectItem value="1-2 Days">📅 1-2 Days</SelectItem>
+              <SelectItem value="2-3 Days">📅 2-3 Days</SelectItem>
+              <SelectItem value="3-5 Days">📅 3-5 Days</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
 
       <div>
         <Label htmlFor="stock">Stock *</Label>
