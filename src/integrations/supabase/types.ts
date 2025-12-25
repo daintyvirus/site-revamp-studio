@@ -203,6 +203,48 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_pages: {
+        Row: {
+          created_at: string
+          id: string
+          is_published: boolean
+          menu_location: string | null
+          menu_order: number | null
+          meta_description: string | null
+          meta_title: string | null
+          show_in_menu: boolean
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          menu_location?: string | null
+          menu_order?: number | null
+          meta_description?: string | null
+          meta_title?: string | null
+          show_in_menu?: boolean
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          menu_location?: string | null
+          menu_order?: number | null
+          meta_description?: string | null
+          meta_title?: string | null
+          show_in_menu?: boolean
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       delivery_logs: {
         Row: {
           action: string
@@ -404,6 +446,88 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      faq_items: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          is_active: boolean
+          question: string
+          section_id: string | null
+          sort_order: number
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          question: string
+          section_id?: string | null
+          sort_order?: number
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          question?: string
+          section_id?: string | null
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faq_items_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "page_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feature_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          section_id: string | null
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          section_id?: string | null
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          section_id?: string | null
+          sort_order?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_items_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "page_sections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hero_images: {
         Row: {
@@ -709,6 +833,77 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      page_sections: {
+        Row: {
+          background_color: string | null
+          button_text: string | null
+          button_url: string | null
+          content: string | null
+          created_at: string
+          extra_data: Json | null
+          id: string
+          image_url: string | null
+          is_visible: boolean
+          page_id: string
+          secondary_button_text: string | null
+          secondary_button_url: string | null
+          section_type: string
+          sort_order: number
+          subtitle: string | null
+          text_color: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          background_color?: string | null
+          button_text?: string | null
+          button_url?: string | null
+          content?: string | null
+          created_at?: string
+          extra_data?: Json | null
+          id?: string
+          image_url?: string | null
+          is_visible?: boolean
+          page_id: string
+          secondary_button_text?: string | null
+          secondary_button_url?: string | null
+          section_type: string
+          sort_order?: number
+          subtitle?: string | null
+          text_color?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          background_color?: string | null
+          button_text?: string | null
+          button_url?: string | null
+          content?: string | null
+          created_at?: string
+          extra_data?: Json | null
+          id?: string
+          image_url?: string | null
+          is_visible?: boolean
+          page_id?: string
+          secondary_button_text?: string | null
+          secondary_button_url?: string | null
+          section_type?: string
+          sort_order?: number
+          subtitle?: string | null
+          text_color?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_sections_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "custom_pages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payment_methods: {
         Row: {

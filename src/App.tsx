@@ -36,6 +36,9 @@ import AdminTestimonials from "./pages/admin/AdminTestimonials";
 import AdminPromotionalBanners from "./pages/admin/AdminPromotionalBanners";
 import AdminReviews from "./pages/admin/AdminReviews";
 import AdminCoupons from "./pages/admin/AdminCoupons";
+import AdminPages from "./pages/admin/AdminPages";
+import AdminPageEditor from "./pages/admin/AdminPageEditor";
+import CustomPage from "./pages/CustomPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -102,6 +105,9 @@ function AnimatedRoutes() {
           <Route path="/admin/promotional-banners" element={<AdminPromotionalBanners />} />
           <Route path="/admin/reviews" element={<AdminReviews />} />
           <Route path="/admin/coupons" element={<AdminCoupons />} />
+          <Route path="/admin/pages" element={<AdminPages />} />
+          <Route path="/admin/pages/:id" element={<AdminPageEditor />} />
+          <Route path="/page/:slug" element={<CustomPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </motion.div>
