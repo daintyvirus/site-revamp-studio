@@ -32,7 +32,7 @@ export default function PaymentMethodSelector({ methods, selected, onSelect }: P
           className={cn(
             "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all hover:shadow-md",
             selected === method.slug
-              ? "border-blue-600 bg-blue-50 dark:bg-blue-950"
+              ? "border-primary bg-primary/10"
               : "border-border bg-card hover:border-muted-foreground/50"
           )}
         >
@@ -66,7 +66,7 @@ export default function PaymentMethodSelector({ methods, selected, onSelect }: P
           <TabsTrigger 
             key={tab.value} 
             value={tab.value} 
-            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
           >
             {tab.label}
           </TabsTrigger>

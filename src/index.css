@@ -7,109 +7,110 @@
 
 @layer base {
   :root {
-    /* Light Theme - Clean & Modern */
-    --background: 220 15% 97%;
-    --foreground: 220 25% 10%;
+    /* Light Theme - Clean (Kryptomate-inspired contrast) */
+    --background: 220 18% 98%;
+    --foreground: 230 22% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 25% 10%;
+    --card-foreground: 230 22% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 10%;
+    --popover-foreground: 230 22% 12%;
 
-    /* Vibrant Green Primary */
-    --primary: 145 65% 42%;
+    /* Primary (emerald) */
+    --primary: 145 62% 40%;
     --primary-foreground: 0 0% 100%;
 
-    /* Soft Gray Secondary */
-    --secondary: 220 15% 92%;
-    --secondary-foreground: 220 25% 20%;
+    /* Soft neutral surfaces */
+    --secondary: 230 18% 94%;
+    --secondary-foreground: 230 22% 18%;
 
-    --muted: 220 15% 94%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 230 18% 96%;
+    --muted-foreground: 230 10% 45%;
 
-    /* Gold Accent */
-    --accent: 40 85% 55%;
-    --accent-foreground: 220 25% 10%;
+    /* Accent (magenta) */
+    --accent: 318 70% 52%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 88%;
-    --input: 220 15% 88%;
-    --ring: 145 65% 42%;
+    --border: 230 18% 88%;
+    --input: 230 18% 88%;
+    --ring: 145 62% 40%;
 
     --radius: 0.75rem;
 
     /* Success & Warning */
-    --success: 145 65% 42%;
+    --success: 145 62% 40%;
     --success-foreground: 0 0% 100%;
-    --warning: 40 85% 55%;
-    --warning-foreground: 220 25% 10%;
+    --warning: 38 95% 50%;
+    --warning-foreground: 230 22% 12%;
 
     /* Sidebar */
-    --sidebar-background: 320 50% 25%;
+    --sidebar-background: 330 50% 24%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 145 65% 50%;
+    --sidebar-primary: 145 62% 44%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 320 45% 35%;
+    --sidebar-accent: 330 45% 34%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 320 40% 30%;
-    --sidebar-ring: 145 65% 50%;
+    --sidebar-border: 330 35% 28%;
+    --sidebar-ring: 145 62% 44%;
 
-    --chart-1: 145 65% 42%;
-    --chart-2: 40 85% 55%;
-    --chart-3: 320 50% 45%;
+    --chart-1: 145 62% 40%;
+    --chart-2: 38 95% 50%;
+    --chart-3: 318 70% 52%;
     --chart-4: 220 60% 50%;
     --chart-5: 0 72% 51%;
   }
 
   .dark {
-    /* Kryptomate Dark Theme - Deep Navy & Vibrant Accents */
-    --background: 235 25% 7%;
+    /* Dark Theme - Deep Navy + Emerald + Magenta */
+    --background: 235 28% 8%;
     --foreground: 220 15% 92%;
 
-    --card: 235 22% 11%;
+    --card: 235 24% 12%;
     --card-foreground: 220 15% 92%;
 
-    --popover: 235 22% 13%;
+    --popover: 235 24% 13%;
     --popover-foreground: 220 15% 92%;
 
-    /* Vibrant Green Primary */
-    --primary: 145 70% 45%;
-    --primary-foreground: 235 25% 7%;
+    --primary: 145 72% 45%;
+    --primary-foreground: 235 28% 8%;
 
-    /* Muted Navy Secondary */
-    --secondary: 235 20% 16%;
-    --secondary-foreground: 220 15% 85%;
+    --secondary: 235 22% 16%;
+    --secondary-foreground: 220 15% 90%;
 
-    --muted: 235 18% 14%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 235 20% 14%;
+    --muted-foreground: 220 10% 58%;
 
-    /* Gold Accent */
-    --accent: 40 90% 58%;
-    --accent-foreground: 235 25% 7%;
+    --accent: 320 75% 58%;
+    --accent-foreground: 235 28% 8%;
 
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 235 18% 18%;
-    --input: 235 18% 20%;
-    --ring: 145 70% 45%;
+    --border: 235 18% 20%;
+    --input: 235 18% 22%;
+    --ring: 145 72% 45%;
 
-    /* Sidebar with Pink/Magenta Gradient */
+    --success: 145 72% 45%;
+    --success-foreground: 235 28% 8%;
+    --warning: 38 95% 55%;
+    --warning-foreground: 235 28% 8%;
+
     --sidebar-background: 330 45% 22%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 145 70% 50%;
-    --sidebar-primary-foreground: 235 25% 7%;
-    --sidebar-accent: 330 40% 30%;
+    --sidebar-primary: 145 72% 48%;
+    --sidebar-primary-foreground: 235 28% 8%;
+    --sidebar-accent: 330 42% 30%;
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 330 35% 28%;
-    --sidebar-ring: 145 70% 50%;
+    --sidebar-ring: 145 72% 48%;
 
-    --chart-1: 145 70% 45%;
-    --chart-2: 40 90% 58%;
-    --chart-3: 330 50% 50%;
+    --chart-1: 145 72% 45%;
+    --chart-2: 38 95% 55%;
+    --chart-3: 320 75% 58%;
     --chart-4: 220 70% 55%;
     --chart-5: 0 72% 55%;
   }
@@ -132,9 +133,9 @@
   }
 
   .dark body {
-    background-image: 
-      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(330 50% 20% / 0.3), transparent),
-      radial-gradient(ellipse 60% 40% at 100% 100%, hsl(145 70% 45% / 0.08), transparent);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(var(--accent) / 0.22), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 100%, hsl(var(--primary) / 0.08), transparent);
     background-attachment: fixed;
   }
 
@@ -144,15 +145,15 @@
   }
 
   h1 {
-    @apply text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1];
+    @apply text-3xl md:text-4xl lg:text-5xl font-semibold leading-[1.15];
   }
 
   h2 {
-    @apply text-3xl md:text-4xl font-bold leading-tight;
+    @apply text-2xl md:text-3xl font-semibold leading-tight;
   }
 
   h3 {
-    @apply text-2xl md:text-3xl font-semibold leading-tight;
+    @apply text-xl md:text-2xl font-semibold leading-tight;
   }
 
   p {
