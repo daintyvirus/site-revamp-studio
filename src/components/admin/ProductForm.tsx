@@ -44,7 +44,6 @@ const productSchema = z.object({
   flash_sale_enabled: z.boolean(),
   sale_start_date: z.string().optional().nullable(),
   sale_end_date: z.string().optional().nullable(),
-  digiseller_id: z.coerce.number().int().optional().nullable(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -57,7 +56,6 @@ interface VariantFormData {
   sale_price: number | null;
   sale_price_bdt: number | null;
   stock: number;
-  digiseller_id: number | null;
   isNew?: boolean;
 }
 
@@ -86,7 +84,6 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
       sale_price: v.sale_price,
       sale_price_bdt: v.sale_price_bdt,
       stock: v.stock,
-      digiseller_id: (v as any).digiseller_id ?? null,
     })) ?? []
   );
 
@@ -145,7 +142,6 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
       flash_sale_enabled: product?.flash_sale_enabled ?? false,
       sale_start_date: product?.sale_start_date ?? null,
       sale_end_date: product?.sale_end_date ?? null,
-      digiseller_id: (product as any)?.digiseller_id ?? null,
     },
   });
 
@@ -213,7 +209,6 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
       sale_price: null,
       sale_price_bdt: null,
       stock: 0,
-      digiseller_id: null,
       isNew: true,
     }]);
   };
@@ -263,7 +258,6 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
         flash_sale_enabled: data.flash_sale_enabled,
         sale_start_date: data.sale_start_date ? new Date(data.sale_start_date).toISOString() : null,
         sale_end_date: data.sale_end_date ? new Date(data.sale_end_date).toISOString() : null,
-        digiseller_id: data.digiseller_id || null,
       };
 
       let productId = product?.id;
@@ -303,7 +297,6 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
             sale_price: variant.sale_price || null,
             sale_price_bdt: variant.sale_price_bdt || null,
             stock: variant.stock,
-            digiseller_id: variant.digiseller_id || null,
           };
 
           if (variant.id && !variant.isNew) {
@@ -530,16 +523,6 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
                       />
                     </div>
 
-                    <div>
-                      <Label className="text-xs">Digiseller ID</Label>
-                      <Input
-                        type="number"
-                        value={variant.digiseller_id ?? ''}
-                        onChange={(e) => updateVariantField(index, 'digiseller_id', e.target.value ? Number(e.target.value) : null)}
-                        className="h-9"
-                        placeholder="Optional"
-                      />
-                    </div>
                   </div>
                 </div>
               ))}
@@ -651,32 +634,6 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
             </p>
           </CardContent>
         )}
-      </Card>
-
-      {/* Digiseller Integration */}
-      <Card className="border-blue-500/30">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            🛒 Digiseller Integration
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Link this product to a Digiseller product for direct checkout
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div>
-            <Label htmlFor="digiseller_id">Digiseller Product ID</Label>
-            <Input 
-              id="digiseller_id" 
-              type="number" 
-              placeholder="e.g., 1234567"
-              {...register('digiseller_id')} 
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Enter the product ID from your Digiseller seller account
-            </p>
-          </div>
-        </CardContent>
       </Card>
 
       <div>
