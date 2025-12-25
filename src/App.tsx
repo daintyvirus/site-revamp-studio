@@ -18,7 +18,7 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import Orders from "./pages/Orders";
 import OrderDelivery from "./pages/OrderDelivery";
 import TrackOrder from "./pages/TrackOrder";
-import Wishlist from "./pages/Wishlist";
+
 import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
@@ -83,7 +83,7 @@ function AnimatedRoutes() {
           <Route path="/orders" element={<Orders />} />
           <Route path="/orders/:orderId/delivery" element={<OrderDelivery />} />
           <Route path="/track-order" element={<TrackOrder />} />
-          <Route path="/wishlist" element={<Wishlist />} />
+          
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/products" element={<AdminProducts />} />

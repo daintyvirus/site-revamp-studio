@@ -253,14 +253,6 @@ export default function ProductDetail() {
               )}
             </div>
 
-            {/* Buy Bulk Button */}
-            <Button
-              size="lg"
-              className="h-12 w-full bg-accent hover:bg-accent/90 text-accent-foreground font-medium mb-6"
-            >
-              Buy Bulk
-            </Button>
-
             {/* Estimated Price */}
             <div className="text-center mb-8">
               <span className="text-sm text-muted-foreground uppercase tracking-wider">Estimated Price: </span>
