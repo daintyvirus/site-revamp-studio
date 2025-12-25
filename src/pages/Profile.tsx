@@ -22,11 +22,11 @@ import { cn } from '@/lib/utils';
 type TabType = 'orders' | 'wishlist' | 'profile' | 'settings';
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-warning/20 text-warning border-warning/30',
+  pending: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
   processing: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   shipped: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-  completed: 'bg-primary/20 text-primary border-primary/30',
-  cancelled: 'bg-destructive/20 text-destructive border-destructive/30',
+  completed: 'bg-green-500/20 text-green-400 border-green-500/30',
+  cancelled: 'bg-red-500/20 text-red-400 border-red-500/30',
   refunded: 'bg-muted-foreground/20 text-muted-foreground border-muted-foreground/30',
 };
 
