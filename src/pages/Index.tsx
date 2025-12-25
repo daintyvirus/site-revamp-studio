@@ -3,6 +3,7 @@ import Layout from '@/components/layout/Layout';
 import HeroSection from '@/components/home/HeroSection';
 import AdvantagesSection from '@/components/home/AdvantagesSection';
 import CategorySection from '@/components/home/CategorySection';
+import FlashSalesSection from '@/components/home/FlashSalesSection';
 import BestSellersSection from '@/components/home/BestSellersSection';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
 import NewArrivalsSection from '@/components/home/NewArrivalsSection';
@@ -26,6 +27,7 @@ export default function Index() {
         <HeroSection />
         <AdvantagesSection />
         <CategorySection />
+        <FlashSalesSection />
         <BestSellersSection />
         <FeaturedProducts />
         <NewArrivalsSection />
