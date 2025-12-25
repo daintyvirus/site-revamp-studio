@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { X, ShoppingBag, ArrowLeft, ArrowRight } from 'lucide-react';
+import { X, ShoppingBag, ArrowLeft, ArrowRight, Shield, Zap, CreditCard } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
@@ -55,13 +55,19 @@ export default function Checkout() {
   if (!user) {
     return (
       <Layout>
-        <div className="container mx-auto px-4 py-20 text-center">
-          <ShoppingBag className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-          <h1 className="font-display text-2xl font-bold mb-2">Sign in to checkout</h1>
-          <p className="text-muted-foreground mb-6">You need an account to place orders</p>
-          <Button asChild className="glow-purple">
-            <Link to="/auth">Sign In</Link>
-          </Button>
+        <div className="min-h-screen bg-background">
+          <div className="container mx-auto px-4 py-20 text-center">
+            <div className="max-w-md mx-auto">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/20 to-neon-pink/20 flex items-center justify-center border border-primary/30">
+                <ShoppingBag className="h-10 w-10 text-primary" />
+              </div>
+              <h1 className="font-display text-2xl font-bold mb-2">Sign in to checkout</h1>
+              <p className="text-muted-foreground mb-6">You need an account to place orders</p>
+              <Button asChild className="bg-gradient-to-r from-primary to-neon-pink hover:opacity-90">
+                <Link to="/auth">Sign In</Link>
+              </Button>
+            </div>
+          </div>
         </div>
       </Layout>
     );
@@ -70,8 +76,11 @@ export default function Checkout() {
   if (isLoading || methodsLoading) {
     return (
       <Layout>
-        <div className="container mx-auto px-4 py-20 text-center">
-          <p>Loading...</p>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-muted-foreground">Loading checkout...</p>
+          </div>
         </div>
       </Layout>
     );
@@ -80,13 +89,19 @@ export default function Checkout() {
   if (!cart?.length) {
     return (
       <Layout>
-        <div className="container mx-auto px-4 py-20 text-center">
-          <ShoppingBag className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-          <h1 className="font-display text-2xl font-bold mb-2">Your cart is empty</h1>
-          <p className="text-muted-foreground mb-6">Add some items before checking out</p>
-          <Button asChild className="glow-purple">
-            <Link to="/shop">Browse Products</Link>
-          </Button>
+        <div className="min-h-screen bg-background">
+          <div className="container mx-auto px-4 py-20 text-center">
+            <div className="max-w-md mx-auto">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/20 to-neon-pink/20 flex items-center justify-center border border-primary/30">
+                <ShoppingBag className="h-10 w-10 text-primary" />
+              </div>
+              <h1 className="font-display text-2xl font-bold mb-2">Your cart is empty</h1>
+              <p className="text-muted-foreground mb-6">Add some items before checking out</p>
+              <Button asChild className="bg-gradient-to-r from-primary to-neon-pink hover:opacity-90">
+                <Link to="/shop">Browse Products</Link>
+              </Button>
+            </div>
+          </div>
         </div>
       </Layout>
     );
@@ -115,53 +130,110 @@ export default function Checkout() {
     }
   };
 
+  const steps = [
+    { key: 'info', label: 'Your Info', icon: Shield },
+    { key: 'method', label: 'Payment', icon: CreditCard },
+    { key: 'payment', label: 'Verify', icon: Zap },
+  ];
+
+  const currentStepIndex = steps.findIndex(s => s.key === step);
+
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-background to-blue-50 dark:from-blue-950/20 dark:via-background dark:to-blue-950/20">
-        <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-background">
+        {/* Background Effects */}
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-neon-pink/5 rounded-full blur-3xl" />
+        </div>
+
+        <div className="container mx-auto px-4 py-8 relative z-10">
           <div className="max-w-2xl mx-auto">
             {/* Header */}
-            <div className="bg-card rounded-2xl border shadow-lg overflow-hidden">
-              <div className="flex items-center justify-between p-4 border-b">
-                <Button variant="ghost" size="icon" asChild>
-                  <Link to="/cart">
-                    <ArrowLeft className="h-5 w-5" />
-                  </Link>
-                </Button>
-                <Button variant="ghost" size="icon" asChild>
-                  <Link to="/cart">
-                    <X className="h-5 w-5" />
-                  </Link>
-                </Button>
+            <div className="flex items-center justify-between mb-8">
+              <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
+                <Link to="/cart" className="flex items-center gap-2">
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to Cart
+                </Link>
+              </Button>
+              <Button variant="ghost" size="icon" asChild>
+                <Link to="/cart">
+                  <X className="h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
+
+            {/* Progress Steps */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between">
+                {steps.map((s, index) => {
+                  const Icon = s.icon;
+                  const isActive = index === currentStepIndex;
+                  const isCompleted = index < currentStepIndex;
+                  return (
+                    <div key={s.key} className="flex-1 flex items-center">
+                      <div className="flex flex-col items-center flex-1">
+                        <div className={`
+                          w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300
+                          ${isActive ? 'bg-gradient-to-br from-primary to-neon-pink text-primary-foreground shadow-lg shadow-primary/30' : ''}
+                          ${isCompleted ? 'bg-success/20 text-success border border-success/30' : ''}
+                          ${!isActive && !isCompleted ? 'bg-card border border-border text-muted-foreground' : ''}
+                        `}>
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <span className={`text-xs mt-2 font-medium ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
+                          {s.label}
+                        </span>
+                      </div>
+                      {index < steps.length - 1 && (
+                        <div className={`h-0.5 flex-1 mx-2 mb-6 transition-colors ${isCompleted ? 'bg-success' : 'bg-border'}`} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Main Card */}
+            <div className="bg-card rounded-2xl border border-border shadow-xl overflow-hidden">
+              {/* Store Info Header */}
+              <div className="p-6 border-b border-border bg-gradient-to-r from-card to-card/80">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-neon-pink flex items-center justify-center shadow-lg shadow-primary/30">
+                      <span className="text-2xl">🎮</span>
+                    </div>
+                    <div>
+                      <h1 className="font-display font-bold text-xl">{STORE_NAME}</h1>
+                      <p className="text-sm text-muted-foreground">Secure Checkout</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-success">
+                    <Shield className="h-4 w-4" />
+                    <span className="text-xs font-medium">SSL Secured</span>
+                  </div>
+                </div>
               </div>
 
               {/* Content */}
               <div className="p-6 sm:p-8">
-                {/* Store Info */}
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-                      <span className="text-2xl">🎮</span>
-                    </div>
-                    <div>
-                      <h1 className="font-bold text-lg">{STORE_NAME}</h1>
-                      <div className="flex gap-2 mt-1">
-                        <span className="text-xs text-muted-foreground border rounded-full px-2 py-0.5">Support</span>
-                        <span className="text-xs text-muted-foreground border rounded-full px-2 py-0.5">FAQ</span>
-                        <span className="text-xs text-muted-foreground border rounded-full px-2 py-0.5">Details</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Order Summary Mini */}
                 {step !== 'info' && (
-                  <div className="bg-muted/50 rounded-xl p-4 mb-6">
+                  <div className="bg-gradient-to-r from-primary/10 to-neon-pink/10 rounded-xl p-4 mb-6 border border-primary/20">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">
-                        {cart.length} item{cart.length > 1 ? 's' : ''} • {customerInfo.name}
-                      </span>
-                      <span className="font-bold text-primary">{formatPrice(totalBDT, totalUSD)}</span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                          <ShoppingBag className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <span className="text-sm text-muted-foreground block">
+                            {cart.length} item{cart.length > 1 ? 's' : ''}
+                          </span>
+                          <span className="text-xs text-muted-foreground">{customerInfo.name}</span>
+                        </div>
+                      </div>
+                      <span className="font-display font-bold text-xl text-primary">{formatPrice(totalBDT, totalUSD)}</span>
                     </div>
                   </div>
                 )}
@@ -169,21 +241,31 @@ export default function Checkout() {
                 {/* Step: Customer Info */}
                 {step === 'info' && (
                   <div className="space-y-6">
-                    <div className="text-center mb-6">
-                      <h2 className="font-bold text-xl">Your Information</h2>
-                      <p className="text-muted-foreground text-sm mt-1">Enter your details to continue</p>
+                    <div className="text-center mb-8">
+                      <h2 className="font-display font-bold text-2xl mb-2">Your Information</h2>
+                      <p className="text-muted-foreground">Enter your details to continue</p>
                     </div>
                     
                     <CustomerInfoForm info={customerInfo} onChange={setCustomerInfo} />
                     
+                    {/* Order Total */}
+                    <div className="bg-card/50 rounded-xl p-4 border border-border">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Order Total</span>
+                        <span className="font-display font-bold text-2xl bg-gradient-to-r from-primary to-neon-pink bg-clip-text text-transparent">
+                          {formatPrice(totalBDT, totalUSD)}
+                        </span>
+                      </div>
+                    </div>
+                    
                     <Button
                       onClick={() => setStep('method')}
                       disabled={!canProceedFromInfo}
-                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      className="w-full h-14 bg-gradient-to-r from-primary to-neon-pink hover:opacity-90 font-semibold text-lg"
                       size="lg"
                     >
                       Continue
-                      <ArrowRight className="h-4 w-4 ml-2" />
+                      <ArrowRight className="h-5 w-5 ml-2" />
                     </Button>
                   </div>
                 )}
@@ -198,14 +280,18 @@ export default function Checkout() {
                     />
                     
                     <div className="flex gap-3">
-                      <Button variant="outline" onClick={() => setStep('info')} className="flex-1">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setStep('info')} 
+                        className="flex-1 h-12 border-border hover:bg-card/50"
+                      >
                         <ArrowLeft className="h-4 w-4 mr-2" />
                         Back
                       </Button>
                       <Button
                         onClick={() => setStep('payment')}
                         disabled={!canProceedFromMethod}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700"
+                        className="flex-1 h-12 bg-gradient-to-r from-primary to-neon-pink hover:opacity-90 font-semibold"
                       >
                         Pay {formatPrice(totalBDT, totalUSD)}
                       </Button>
@@ -216,7 +302,11 @@ export default function Checkout() {
                 {/* Step: Payment Instructions */}
                 {step === 'payment' && selectedMethod && (
                   <div className="space-y-6">
-                    <Button variant="ghost" onClick={() => setStep('method')} className="mb-2">
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => setStep('method')} 
+                      className="mb-2 text-muted-foreground hover:text-foreground"
+                    >
                       <ArrowLeft className="h-4 w-4 mr-2" />
                       Change Payment Method
                     </Button>
@@ -232,13 +322,36 @@ export default function Checkout() {
                     <Button
                       onClick={handleSubmit}
                       disabled={!canSubmit || checkout.isPending}
-                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      className="w-full h-14 bg-gradient-to-r from-success to-success/80 hover:opacity-90 font-semibold text-lg"
                       size="lg"
                     >
-                      {checkout.isPending ? 'Verifying...' : 'VERIFY'}
+                      {checkout.isPending ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Verifying...
+                        </div>
+                      ) : (
+                        'VERIFY PAYMENT'
+                      )}
                     </Button>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Trust Badges */}
+            <div className="flex items-center justify-center gap-6 mt-8 text-muted-foreground text-sm">
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-success" />
+                <span>Secure</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-warning" />
+                <span>Instant Delivery</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-primary" />
+                <span>Safe Payment</span>
               </div>
             </div>
           </div>
