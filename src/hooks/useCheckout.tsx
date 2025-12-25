@@ -28,7 +28,9 @@ const checkoutSchema = z.object({
     .min(5, 'Transaction ID must be at least 5 characters')
     .max(50, 'Transaction ID must be less than 50 characters')
     .regex(/^[A-Za-z0-9-]+$/, 'Transaction ID contains invalid characters'),
-  notes: z.string().max(500, 'Notes must be less than 500 characters').optional()
+  notes: z.string().max(500, 'Notes must be less than 500 characters').optional(),
+  couponCode: z.string().optional(),
+  discountAmount: z.number().min(0).optional()
 });
 
 interface CustomerInfo {
@@ -42,6 +44,8 @@ interface CheckoutData {
   paymentMethod: string;
   transactionId: string;
   notes?: string;
+  couponCode?: string;
+  discountAmount?: number;
 }
 
 export function useCheckout() {
@@ -64,17 +68,22 @@ export function useCheckout() {
         throw new Error(firstError.message);
       }
 
-      const { customerInfo, paymentMethod, transactionId, notes } = validationResult.data;
+      const { customerInfo, paymentMethod, transactionId, notes, couponCode, discountAmount } = validationResult.data;
 
       // Calculate total based on current currency
-      const total = cart.reduce((sum, item) => {
+      let total = cart.reduce((sum, item) => {
         const priceBDT = item.variant?.sale_price_bdt || item.variant?.price_bdt || item.product?.sale_price_bdt || item.product?.price_bdt || 0;
         const priceUSD = item.variant?.sale_price || item.variant?.price || item.product?.sale_price || item.product?.price || 0;
         const price = formatPriceValue(priceBDT, priceUSD);
         return sum + price * item.quantity;
       }, 0);
 
-      // Create order with customer info, transaction ID, and currency
+      // Apply discount if coupon was used
+      if (discountAmount && discountAmount > 0) {
+        total = Math.max(0, total - discountAmount);
+      }
+
+      // Create order with customer info, transaction ID, currency, and coupon
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -88,7 +97,9 @@ export function useCheckout() {
           customer_email: customerInfo.email,
           customer_phone: customerInfo.phone,
           transaction_id: transactionId,
-          currency: currency
+          currency: currency,
+          coupon_code: couponCode || null,
+          discount_amount: discountAmount || 0
         })
         .select()
         .single();
