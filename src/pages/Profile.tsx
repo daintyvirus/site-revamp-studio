@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
-import { User, Package, Heart, Settings, ChevronRight, Download, Shield, LogOut, Wallet, ExternalLink, CheckCircle2, Copy, Eye, EyeOff } from 'lucide-react';
+import { User, Package, Heart, Settings, ChevronRight, Download, Shield, LogOut, Wallet, ExternalLink, CheckCircle2, Copy, Eye, EyeOff, Info } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,17 +55,26 @@ export default function Profile() {
   const updateProfile = useUpdateProfile();
   const toggleWishlist = useToggleWishlist();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   const [activeTab, setActiveTab] = useState<TabType>('orders');
   const [isEditing, setIsEditing] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [phone, setPhone] = useState(profile?.phone || '');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [showDeliveryInfo, setShowDeliveryInfo] = useState(false);
+  const [showDeliveryInfo, setShowDeliveryInfo] = useState<Record<string, boolean>>({});
   
   // Preferences state
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [orderUpdates, setOrderUpdates] = useState(true);
+
+  // Handle tab from URL
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'wishlist' || tab === 'profile' || tab === 'settings' || tab === 'orders') {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
   
   if (!user) {
     return (
@@ -116,6 +125,10 @@ export default function Profile() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success('Copied to clipboard');
+  };
+
+  const toggleItemDeliveryInfo = (itemId: string) => {
+    setShowDeliveryInfo(prev => ({ ...prev, [itemId]: !prev[itemId] }));
   };
 
   const sidebarItems = [
@@ -300,145 +313,188 @@ export default function Profile() {
                 </div>
               )}
 
-              {/* Order Details Dialog */}
+              {/* Order Details Dialog - Kryptomate Style One-Click */}
               <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card/95 backdrop-blur-md border-border/50">
+                <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-card/95 backdrop-blur-md border-border/50">
                   {selectedOrder && (
                     <>
                       <DialogHeader className="text-center pb-4">
                         <div className="flex justify-center mb-4">
-                          <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center">
-                            <CheckCircle2 className="h-8 w-8 text-green-500" />
+                          <div className={cn(
+                            "w-16 h-16 rounded-full flex items-center justify-center",
+                            selectedOrder.status === 'completed' || selectedOrder.status === 'delivered'
+                              ? "bg-green-500/20"
+                              : "bg-primary/20"
+                          )}>
+                            {selectedOrder.status === 'completed' || selectedOrder.status === 'delivered' ? (
+                              <CheckCircle2 className="h-8 w-8 text-green-500" />
+                            ) : (
+                              <Package className="h-8 w-8 text-primary" />
+                            )}
                           </div>
                         </div>
                         <DialogTitle className="text-2xl font-semibold">
                           {selectedOrder.status === 'completed' || selectedOrder.status === 'delivered' 
                             ? 'Your order has been delivered'
-                            : `Order ${selectedOrder.status}`
+                            : `Order ${selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1)}`
                           }
                         </DialogTitle>
                         <p className="text-muted-foreground">
-                          All set! Your order is complete and your items have been delivered. Enjoy!
+                          {selectedOrder.status === 'completed' || selectedOrder.status === 'delivered'
+                            ? 'All set! Your order is complete and your items have been delivered. Enjoy!'
+                            : 'Your order is being processed. You will receive your items soon.'
+                          }
                         </p>
                       </DialogHeader>
 
-                      <div className="grid lg:grid-cols-2 gap-6 mt-4">
-                        {/* Left - Product Info */}
-                        <div className="space-y-4">
-                          {/* Product Card */}
-                          <div className="bg-muted/30 rounded-xl p-4 border border-border/30">
-                            <div className="flex gap-4">
-                              <div className="w-24 h-24 rounded-lg bg-muted/50 overflow-hidden flex-shrink-0">
-                                {selectedOrder.items?.[0]?.product?.image_url ? (
-                                  <img 
-                                    src={selectedOrder.items[0].product.image_url} 
-                                    alt="" 
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <Package className="h-8 w-8 text-muted-foreground" />
+                      <div className="grid lg:grid-cols-5 gap-6 mt-4">
+                        {/* Left - All Items with Delivery Info (3 cols) */}
+                        <div className="lg:col-span-3 space-y-4">
+                          {/* Items List with Integrated Delivery/Codes */}
+                          <div className="space-y-3">
+                            {selectedOrder.items?.map((item, idx) => {
+                              const itemKey = `${selectedOrder.id}-${idx}`;
+                              const isRevealed = showDeliveryInfo[itemKey];
+                              
+                              return (
+                                <div key={idx} className="bg-muted/30 rounded-xl border border-border/30 overflow-hidden">
+                                  {/* Item Header */}
+                                  <div className="p-4 flex gap-4">
+                                    <div className="w-20 h-20 rounded-lg bg-muted/50 overflow-hidden flex-shrink-0">
+                                      {item.product?.image_url ? (
+                                        <img 
+                                          src={item.product.image_url} 
+                                          alt="" 
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                          <Package className="h-6 w-6 text-muted-foreground" />
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <h3 className="font-semibold text-sm mb-1">
+                                        {item.product?.name || 'Product'}
+                                      </h3>
+                                      {item.variant?.name && (
+                                        <Badge variant="outline" className="text-[10px] mb-2">
+                                          {item.variant.name}
+                                        </Badge>
+                                      )}
+                                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                        <span>Qty: {item.quantity}</span>
+                                        <span>{formatPrice(item.price, (selectedOrder as any).currency || 'BDT')}</span>
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <Badge className={cn(
+                                        "text-[10px]",
+                                        selectedOrder.status === 'completed' || selectedOrder.status === 'delivered'
+                                          ? "bg-green-500/20 text-green-400"
+                                          : statusColors[selectedOrder.status]
+                                      )}>
+                                        {selectedOrder.status === 'completed' ? 'DELIVERED' : selectedOrder.status.toUpperCase()}
+                                      </Badge>
+                                    </div>
                                   </div>
-                                )}
-                              </div>
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-lg mb-1">
-                                  {selectedOrder.items?.[0]?.product?.name || 'Product'}
-                                </h3>
-                                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">ABOUT THIS ITEM</p>
-                                <p className="text-sm text-muted-foreground line-clamp-3">
-                                  {selectedOrder.items?.[0]?.product?.short_description || selectedOrder.items?.[0]?.product?.description || 'Digital product delivered instantly.'}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
 
-                          {/* Delivery Status */}
-                          <div className="text-center py-4">
-                            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">DELIVERY STATUS</p>
-                            <Badge className={cn(
-                              "px-6 py-2 text-sm font-semibold",
-                              selectedOrder.status === 'completed' || selectedOrder.status === 'delivered'
-                                ? "bg-green-500 text-white"
-                                : statusColors[selectedOrder.status]
-                            )}>
-                              {selectedOrder.status === 'completed' ? 'DELIVERED' : selectedOrder.status.toUpperCase()}
-                            </Badge>
-                          </div>
-
-                          {/* How to Redeem */}
-                          {(selectedOrder.delivery_info || (selectedOrder as any).delivery_instructions) && (
-                            <div className="bg-muted/20 rounded-xl p-4 border border-border/30">
-                              <div className="flex items-center gap-2 mb-3">
-                                <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
-                                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                  {/* Delivery Info Section - Integrated */}
+                                  {(selectedOrder.status === 'completed' || selectedOrder.status === 'delivered') && selectedOrder.delivery_info && (
+                                    <div className="border-t border-border/30 p-4 bg-muted/20">
+                                      <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                          <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                                            <CheckCircle2 className="h-3 w-3 text-green-500" />
+                                          </div>
+                                          <span className="text-xs font-semibold uppercase tracking-wider">YOUR CODE</span>
+                                        </div>
+                                        <div className="flex gap-1">
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7"
+                                            onClick={() => toggleItemDeliveryInfo(itemKey)}
+                                          >
+                                            {isRevealed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7"
+                                            onClick={() => copyToClipboard(selectedOrder.delivery_info || '')}
+                                          >
+                                            <Copy className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                      <div className="bg-background/50 rounded-lg p-3 border border-border/30">
+                                        <code className="font-mono text-sm break-all">
+                                          {isRevealed ? selectedOrder.delivery_info : '••••••••••••••••'}
+                                        </code>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
-                                <h4 className="font-semibold uppercase text-sm">HOW TO REDEEM</h4>
+                              );
+                            })}
+                          </div>
+
+                          {/* How to Redeem/Instructions */}
+                          <div className="bg-muted/20 rounded-xl p-4 border border-border/30">
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                                <Info className="h-4 w-4 text-primary" />
                               </div>
-                              <p className="text-sm text-muted-foreground">
-                                {(selectedOrder as any).delivery_instructions || 'Follow these instructions to redeem your purchase without a hitch.'}
-                              </p>
-                              <Button variant="outline" size="sm" className="mt-3">
-                                VIEW STEPS
-                              </Button>
+                              <h4 className="font-semibold uppercase text-sm">HOW TO REDEEM</h4>
                             </div>
-                          )}
+                            <div className="text-sm text-muted-foreground space-y-2">
+                              {(selectedOrder as any).delivery_instructions ? (
+                                <p>{(selectedOrder as any).delivery_instructions}</p>
+                              ) : (
+                                <>
+                                  <p>1. Copy your code from above by clicking the copy icon.</p>
+                                  <p>2. Go to the official redemption page for the product.</p>
+                                  <p>3. Enter or paste your code and follow the prompts.</p>
+                                  <p>4. Enjoy your purchase!</p>
+                                </>
+                              )}
+                            </div>
+                          </div>
                         </div>
 
-                        {/* Right - Order Details */}
-                        <div className="space-y-4">
-                          {/* Voucher/Delivery Info */}
-                          {selectedOrder.delivery_info && (
-                            <div className="bg-muted/30 rounded-xl p-4 border border-border/30">
-                              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">VOUCHER CODE</p>
-                              <div className="flex items-center gap-2 bg-background/50 rounded-lg p-3 border border-border/30">
-                                <code className="flex-1 font-mono text-sm">
-                                  {showDeliveryInfo ? selectedOrder.delivery_info : '••••••••••••••••'}
-                                </code>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => setShowDeliveryInfo(!showDeliveryInfo)}
-                                >
-                                  {showDeliveryInfo ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => copyToClipboard(selectedOrder.delivery_info || '')}
-                                >
-                                  <Copy className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Order Summary */}
+                        {/* Right - Order Summary (2 cols) */}
+                        <div className="lg:col-span-2 space-y-4">
+                          {/* Order Summary Card */}
                           <div className="bg-muted/30 rounded-xl p-4 border border-border/30 space-y-4">
                             <div>
                               <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">ORDER ID</p>
-                              <p className="font-semibold">GB/ORDER-{selectedOrder.id.slice(0, 6).toUpperCase()}</p>
+                              <p className="font-semibold text-sm">GB/ORDER-{selectedOrder.id.slice(0, 6).toUpperCase()}</p>
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">ORDER STATUS</p>
-                              <Badge className={cn("px-4 py-1", statusColors[selectedOrder.status])}>
+                              <Badge className={cn("px-3 py-1 text-xs", statusColors[selectedOrder.status])}>
                                 {selectedOrder.status === 'completed' ? 'COMPLETED' : selectedOrder.status.toUpperCase()}
                               </Badge>
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">ORDER DATE</p>
-                              <p className="font-semibold">
-                                {format(new Date(selectedOrder.created_at), "MMM dd, yyyy, hh:mm:ss a")}
+                              <p className="text-sm">
+                                {format(new Date(selectedOrder.created_at), "MMM dd, yyyy, hh:mm a")}
                               </p>
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">PAYMENT STATUS</p>
-                              <Badge className={cn("px-4 py-1", paymentStatusColors[selectedOrder.payment_status])}>
+                              <Badge className={cn("px-3 py-1 text-xs", paymentStatusColors[selectedOrder.payment_status])}>
                                 {selectedOrder.payment_status.toUpperCase()}
                               </Badge>
                             </div>
+                            {(selectedOrder as any).payment_method && (
+                              <div>
+                                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">PAYMENT METHOD</p>
+                                <p className="text-sm capitalize">{(selectedOrder as any).payment_method}</p>
+                              </div>
+                            )}
                             <Separator />
                             <div className="flex items-center justify-between">
                               <p className="text-sm text-muted-foreground">Total Amount</p>
@@ -449,24 +505,32 @@ export default function Profile() {
                           </div>
 
                           {/* Actions */}
-                          <div className="flex gap-2">
+                          <div className="space-y-2">
                             <Button 
                               variant="outline" 
-                              className="flex-1"
+                              className="w-full"
                               onClick={() => handleDownloadInvoice(selectedOrder)}
                             >
                               <Download className="h-4 w-4 mr-2" />
-                              Invoice
+                              Download Invoice
                             </Button>
                             <Button 
                               variant="outline" 
-                              className="flex-1"
+                              className="w-full"
                               asChild
                             >
                               <Link to={`/track-order?id=${selectedOrder.id}`}>
                                 Track Order
                                 <ExternalLink className="h-4 w-4 ml-2" />
                               </Link>
+                            </Button>
+                          </div>
+
+                          {/* Need Help */}
+                          <div className="bg-muted/20 rounded-xl p-4 border border-border/30 text-center">
+                            <p className="text-xs text-muted-foreground mb-2">Need help with your order?</p>
+                            <Button variant="ghost" size="sm" className="text-xs text-primary">
+                              Contact Support
                             </Button>
                           </div>
                         </div>
