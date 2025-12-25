@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle, Package, Clock, Mail, ArrowRight, Home, ShoppingBag, Copy, Check } from 'lucide-react';
+import { CheckCircle, Package, Clock, Mail, ArrowRight, Home, ShoppingBag, Copy, Check, XCircle, Loader2 } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 import confetti from 'canvas-confetti';
 
 interface OrderItem {
@@ -28,11 +30,62 @@ interface OrderDetails {
 
 export default function OrderConfirmation() {
   const location = useLocation();
-  const orderDetails = location.state as OrderDetails | null;
+  const [searchParams] = useSearchParams();
+  const orderDetailsFromState = location.state as OrderDetails | null;
   const [copied, setCopied] = useState(false);
 
+  // Get orderId and status from URL params (for Digiseller callback)
+  const orderIdFromUrl = searchParams.get('orderId');
+  const statusFromUrl = searchParams.get('status');
+  const isFromDigiseller = !!orderIdFromUrl;
+  const isPaymentFailed = statusFromUrl === 'failed';
+
+  // Fetch order details if coming from Digiseller callback
+  const { data: fetchedOrder, isLoading } = useQuery({
+    queryKey: ['order', orderIdFromUrl],
+    queryFn: async () => {
+      if (!orderIdFromUrl) return null;
+      
+      const { data: order, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (
+            *,
+            product:products (name),
+            variant:product_variants (name)
+          )
+        `)
+        .eq('id', orderIdFromUrl)
+        .single();
+
+      if (error) throw error;
+      return order;
+    },
+    enabled: !!orderIdFromUrl
+  });
+
+  // Construct order details from fetched data
+  const orderDetails: OrderDetails | null = orderDetailsFromState || (fetchedOrder ? {
+    orderId: fetchedOrder.id,
+    total: fetchedOrder.total,
+    currency: fetchedOrder.currency || 'USD',
+    paymentMethod: fetchedOrder.payment_method || 'digiseller',
+    transactionId: fetchedOrder.transaction_id || 'Pending',
+    customerName: fetchedOrder.customer_name || 'Customer',
+    customerEmail: fetchedOrder.customer_email || '',
+    items: fetchedOrder.order_items?.map((item: any) => ({
+      name: item.product?.name || 'Product',
+      quantity: item.quantity,
+      price: item.price,
+      variant: item.variant?.name
+    })) || []
+  } : null);
+
   useEffect(() => {
-    // Trigger confetti on mount
+    // Trigger confetti on mount only for successful payments
+    if (isPaymentFailed) return;
+    
     const duration = 3000;
     const end = Date.now() + duration;
 
@@ -58,11 +111,12 @@ export default function OrderConfirmation() {
     };
 
     frame();
-  }, []);
+  }, [isPaymentFailed]);
 
   const copyOrderId = () => {
-    if (orderDetails?.orderId) {
-      navigator.clipboard.writeText(orderDetails.orderId.slice(0, 8).toUpperCase());
+    const id = orderDetails?.orderId || orderIdFromUrl;
+    if (id) {
+      navigator.clipboard.writeText(id.slice(0, 8).toUpperCase());
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -74,6 +128,56 @@ export default function OrderConfirmation() {
     }
     return `৳${Math.round(amount).toLocaleString()}`;
   };
+
+  // Loading state for Digiseller callback
+  if (isFromDigiseller && isLoading) {
+    return (
+      <Layout>
+        <div className="min-h-[80vh] flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Loading order details...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Payment failed state
+  if (isPaymentFailed) {
+    return (
+      <Layout>
+        <div className="min-h-[80vh] flex items-center justify-center bg-gradient-to-br from-red-50 via-background to-red-50 dark:from-red-950/20 dark:via-background dark:to-red-950/20">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center p-8 max-w-md"
+          >
+            <div className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-6">
+              <XCircle className="h-10 w-10 text-red-500" />
+            </div>
+            <h1 className="font-display text-3xl font-bold mb-2 text-red-600">Payment Failed</h1>
+            <p className="text-muted-foreground mb-6">
+              Your payment could not be processed. Please try again or choose a different payment method.
+            </p>
+            {orderIdFromUrl && (
+              <p className="text-sm text-muted-foreground mb-4">
+                Order ID: <span className="font-mono">{orderIdFromUrl.slice(0, 8).toUpperCase()}</span>
+              </p>
+            )}
+            <div className="flex gap-3 justify-center">
+              <Button asChild variant="outline">
+                <Link to="/orders">View Orders</Link>
+              </Button>
+              <Button asChild>
+                <Link to="/checkout">Try Again</Link>
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      </Layout>
+    );
+  }
 
   // If no order details, show generic success
   if (!orderDetails) {
@@ -152,10 +256,17 @@ export default function OrderConfirmation() {
                     </Button>
                   </div>
                 </div>
-                <Badge className="bg-yellow-500/20 text-yellow-600 border-yellow-500/30">
-                  <Clock className="h-3 w-3 mr-1" />
-                  Pending Verification
-                </Badge>
+                {isFromDigiseller && statusFromUrl === 'success' ? (
+                  <Badge className="bg-green-500/20 text-green-600 border-green-500/30">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Payment Verified
+                  </Badge>
+                ) : (
+                  <Badge className="bg-yellow-500/20 text-yellow-600 border-yellow-500/30">
+                    <Clock className="h-3 w-3 mr-1" />
+                    Pending Verification
+                  </Badge>
+                )}
               </div>
             </div>
 
