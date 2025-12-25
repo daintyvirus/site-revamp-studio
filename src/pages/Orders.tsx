@@ -7,16 +7,10 @@ import { generateInvoicePDF } from '@/lib/generateInvoice';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
 import { useOrders } from '@/hooks/useOrders';
 import { useAuth } from '@/hooks/useAuth';
 import type { Order } from '@/types/database';
+import OrderDetailsDialog from '@/components/orders/OrderDetailsDialog';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-500/20 text-yellow-600 border-yellow-500/30',
@@ -266,121 +260,18 @@ export default function Orders() {
                     </div>
                   )}
                 </CardContent>
-              </Card>
+            </Card>
             );
           })}
         </div>
       </div>
 
-      {/* Order Detail Dialog */}
-      <Dialog open={!!viewingOrder} onOpenChange={() => setViewingOrder(null)}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-display">Order Details</DialogTitle>
-          </DialogHeader>
-          {viewingOrder && (
-            <div className="space-y-4">
-              {/* Order Header */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Order ID</p>
-                  <p className="font-mono font-bold">#{viewingOrder.id.slice(0, 8).toUpperCase()}</p>
-                </div>
-                <Badge className={statusColors[viewingOrder.status]}>
-                  {viewingOrder.status}
-                </Badge>
-              </div>
-
-              <Separator />
-
-              {/* Customer Info */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Date</p>
-                  <p className="font-medium">{format(new Date(viewingOrder.created_at), 'PPP')}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Payment Status</p>
-                  <Badge className={paymentStatusColors[viewingOrder.payment_status]}>
-                    {paymentStatusIcons[viewingOrder.payment_status]}
-                    <span className="ml-1">{viewingOrder.payment_status}</span>
-                  </Badge>
-                </div>
-                {viewingOrder.payment_method && (
-                  <div>
-                    <p className="text-muted-foreground">Payment Method</p>
-                    <p className="font-medium capitalize">{viewingOrder.payment_method}</p>
-                  </div>
-                )}
-                {viewingOrder.transaction_id && (
-                  <div>
-                    <p className="text-muted-foreground">Transaction ID</p>
-                    <p className="font-mono text-sm text-primary">{viewingOrder.transaction_id}</p>
-                  </div>
-                )}
-              </div>
-
-              <Separator />
-
-              {/* Items */}
-              <div>
-                <p className="font-semibold mb-2">Items</p>
-                <div className="space-y-2">
-                  {viewingOrder.items?.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between bg-muted/50 rounded-lg p-3">
-                      <div className="flex items-center gap-3">
-                        {item.product?.image_url && (
-                          <img src={item.product.image_url} alt="" className="w-10 h-10 rounded object-cover" />
-                        )}
-                        <div>
-                          <p className="font-medium text-sm">{item.product?.name}</p>
-                          {item.variant && (
-                            <p className="text-xs text-muted-foreground">Variant: {item.variant.name}</p>
-                          )}
-                          <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
-                        </div>
-                      </div>
-                      <p className="font-bold text-sm">
-                        {formatPrice(item.price * item.quantity, (viewingOrder as any).currency || 'BDT')}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Total */}
-              <div className="flex justify-between items-center font-bold text-lg">
-                <span>Total ({(viewingOrder as any).currency || 'BDT'})</span>
-                <span className="text-primary">
-                  {formatPrice(viewingOrder.total, (viewingOrder as any).currency || 'BDT')}
-                </span>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={() => generateInvoicePDF(viewingOrder)}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Invoice
-                </Button>
-                {(viewingOrder as any).delivery_info && viewingOrder.status === 'completed' && (
-                  <Button asChild className="flex-1">
-                    <Link to={`/orders/${viewingOrder.id}/delivery`}>
-                      <Gift className="h-4 w-4 mr-2" />
-                      View Delivery
-                    </Link>
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Order Details Dialog with Timeline */}
+      <OrderDetailsDialog
+        order={viewingOrder}
+        open={!!viewingOrder}
+        onOpenChange={() => setViewingOrder(null)}
+      />
     </Layout>
   );
 }
