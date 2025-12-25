@@ -61,24 +61,24 @@ export default function PaymentInstructions({
       {/* Instructions */}
       <div className="bg-card border rounded-xl p-6 space-y-4">
         <div className="flex items-start gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-600 mt-2 flex-shrink-0"></span>
+          <span className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></span>
           <p>Go to your <strong>{method.name.split(' ')[0]}</strong> Mobile App.</p>
         </div>
-        
+
         <div className="flex items-start gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-600 mt-2 flex-shrink-0"></span>
+          <span className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></span>
           <p>Choose: <strong>Send Money</strong></p>
         </div>
-        
+
         <div className="flex items-start gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-600 mt-2 flex-shrink-0"></span>
+          <span className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></span>
           <div className="flex items-center gap-2 flex-wrap">
             <span>Enter the Number:</span>
             <strong>{method.account_number}</strong>
             <Button
               size="sm"
               variant="outline"
-              className="h-7 text-xs bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
+              className="h-7 text-xs bg-primary text-primary-foreground hover:bg-primary/90 border-primary/40"
               onClick={() => copyToClipboard(method.account_number, 'number')}
             >
               {copiedNumber ? <Check className="h-3 w-3 mr-1" /> : <Copy className="h-3 w-3 mr-1" />}
@@ -86,16 +86,16 @@ export default function PaymentInstructions({
             </Button>
           </div>
         </div>
-        
+
         <div className="flex items-start gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-600 mt-2 flex-shrink-0"></span>
+          <span className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></span>
           <div className="flex items-center gap-2 flex-wrap">
             <span>Enter the Amount:</span>
             <strong>{amount.toFixed(0)} BDT</strong>
             <Button
               size="sm"
               variant="outline"
-              className="h-7 text-xs bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
+              className="h-7 text-xs bg-primary text-primary-foreground hover:bg-primary/90 border-primary/40"
               onClick={() => copyToClipboard(amount.toFixed(0), 'amount')}
             >
               {copiedAmount ? <Check className="h-3 w-3 mr-1" /> : <Copy className="h-3 w-3 mr-1" />}
@@ -103,14 +103,14 @@ export default function PaymentInstructions({
             </Button>
           </div>
         </div>
-        
+
         <div className="flex items-start gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-600 mt-2 flex-shrink-0"></span>
+          <span className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></span>
           <p>Now enter your <strong>{method.name.split(' ')[0]}</strong> PIN to confirm.</p>
         </div>
-        
+
         <div className="flex items-start gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-600 mt-2 flex-shrink-0"></span>
+          <span className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></span>
           <p>Put the <strong>Transaction ID</strong> in the box below and press <strong>Verify</strong></p>
         </div>
       </div>

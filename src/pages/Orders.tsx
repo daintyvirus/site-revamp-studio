@@ -13,19 +13,19 @@ import type { Order } from '@/types/database';
 import OrderDetailsDialog from '@/components/orders/OrderDetailsDialog';
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-500/20 text-yellow-600 border-yellow-500/30',
-  processing: 'bg-blue-500/20 text-blue-600 border-blue-500/30',
-  shipped: 'bg-purple-500/20 text-purple-600 border-purple-500/30',
-  completed: 'bg-green-500/20 text-green-600 border-green-500/30',
-  cancelled: 'bg-red-500/20 text-red-600 border-red-500/30',
-  refunded: 'bg-gray-500/20 text-gray-600 border-gray-500/30',
+  pending: 'bg-warning/20 text-warning border-warning/30',
+  processing: 'bg-muted/50 text-foreground border-border/50',
+  shipped: 'bg-muted/50 text-foreground border-border/50',
+  completed: 'bg-primary/20 text-primary border-primary/30',
+  cancelled: 'bg-destructive/15 text-destructive border-destructive/30',
+  refunded: 'bg-muted/50 text-muted-foreground border-border/50',
 };
 
 const paymentStatusColors: Record<string, string> = {
-  pending: 'bg-yellow-500/20 text-yellow-600 border-yellow-500/30',
-  paid: 'bg-green-500/20 text-green-600 border-green-500/30',
-  failed: 'bg-red-500/20 text-red-600 border-red-500/30',
-  refunded: 'bg-gray-500/20 text-gray-600 border-gray-500/30',
+  pending: 'bg-warning/20 text-warning border-warning/30',
+  paid: 'bg-primary/20 text-primary border-primary/30',
+  failed: 'bg-destructive/15 text-destructive border-destructive/30',
+  refunded: 'bg-muted/50 text-muted-foreground border-border/50',
 };
 
 const paymentStatusIcons: Record<string, React.ReactNode> = {

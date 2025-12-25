@@ -106,7 +106,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           {/* Badges */}
           <div className="absolute top-2 left-2 flex flex-col gap-1.5">
             {(isFlashSaleActive || hasDiscount) && (
-              <Badge className="bg-green-500 text-white text-[10px] font-semibold px-2 py-0.5">
+              <Badge className="bg-primary text-primary-foreground text-[10px] font-semibold px-2 py-0.5">
                 -{discountPercent}%
               </Badge>
             )}
@@ -127,7 +127,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               onClick={handleToggleWishlist}
               disabled={toggleWishlist.isPending}
             >
-              <Heart className={cn('h-4 w-4', isInWishlist && 'fill-red-500 text-red-500')} />
+              <Heart className={cn('h-4 w-4', isInWishlist && 'fill-destructive text-destructive')} />
             </Button>
           )}
 
@@ -165,7 +165,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="flex items-center gap-2">
             <span className={cn(
               "font-semibold text-sm",
-              isFlashSaleActive ? "text-green-500" : "text-foreground"
+              isFlashSaleActive ? "text-primary" : "text-foreground"
             )}>
               {formatPrice(displayPriceBDT, displayPriceUSD)}
             </span>
