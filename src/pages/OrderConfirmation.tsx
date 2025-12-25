@@ -34,10 +34,10 @@ export default function OrderConfirmation() {
   const orderDetailsFromState = location.state as OrderDetails | null;
   const [copied, setCopied] = useState(false);
 
-  // Get orderId and status from URL params (for Digiseller callback)
+  // Get orderId and status from URL params (for callback)
   const orderIdFromUrl = searchParams.get('orderId');
   const statusFromUrl = searchParams.get('status');
-  const isFromDigiseller = !!orderIdFromUrl;
+  const isFromCallback = !!orderIdFromUrl;
   const isPaymentFailed = statusFromUrl === 'failed';
 
   // Fetch order details if coming from Digiseller callback
@@ -129,8 +129,8 @@ export default function OrderConfirmation() {
     return `৳${Math.round(amount).toLocaleString()}`;
   };
 
-  // Loading state for Digiseller callback
-  if (isFromDigiseller && isLoading) {
+  // Loading state for callback
+  if (isFromCallback && isLoading) {
     return (
       <Layout>
         <div className="min-h-[80vh] flex items-center justify-center">
@@ -256,7 +256,7 @@ export default function OrderConfirmation() {
                     </Button>
                   </div>
                 </div>
-                {isFromDigiseller && statusFromUrl === 'success' ? (
+                {isFromCallback && statusFromUrl === 'success' ? (
                   <Badge className="bg-green-500/20 text-green-600 border-green-500/30">
                     <CheckCircle className="h-3 w-3 mr-1" />
                     Payment Verified

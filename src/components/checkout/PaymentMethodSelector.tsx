@@ -12,9 +12,8 @@ export default function PaymentMethodSelector({ methods, selected, onSelect }: P
   const mobileMethods = methods.filter(m => m.type === 'mobile_banking');
   const netMethods = methods.filter(m => m.type === 'net_banking');
   const cardMethods = methods.filter(m => m.type === 'card');
-  const digisellerMethods = methods.filter(m => m.type === 'digiseller');
   const cryptoMethods = methods.filter(m => m.type === 'crypto');
-  const otherMethods = [...cardMethods, ...digisellerMethods, ...cryptoMethods];
+  const otherMethods = [...cardMethods, ...cryptoMethods];
 
   // Determine which tabs to show
   const tabs = [];
@@ -47,9 +46,6 @@ export default function PaymentMethodSelector({ methods, selected, onSelect }: P
             )}
           </div>
           <span className="text-sm font-medium text-center">{method.name}</span>
-          {method.type === 'digiseller' && (
-            <span className="text-xs text-muted-foreground">International</span>
-          )}
         </button>
       ))}
     </div>
