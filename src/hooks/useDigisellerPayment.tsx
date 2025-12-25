@@ -83,6 +83,20 @@ export function useDigisellerPayment() {
 
       if (itemsError) throw itemsError;
 
+      // Check if we have a single product with a Digiseller ID for product-based checkout
+      let digisellerId: number | undefined;
+      let totalQuantity = 1;
+
+      if (cart.length === 1) {
+        const item = cart[0];
+        // Check variant first, then product for digiseller_id
+        const variantDigisellerId = (item.variant as any)?.digiseller_id;
+        const productDigisellerId = (item.product as any)?.digiseller_id;
+        
+        digisellerId = variantDigisellerId || productDigisellerId;
+        totalQuantity = item.quantity;
+      }
+
       // Generate product name for Digiseller
       const productName = cart.length === 1 
         ? cart[0].product?.name || 'Order'
@@ -102,7 +116,10 @@ export function useDigisellerPayment() {
           customerName: customerInfo.name,
           productName,
           returnUrl: `${supabaseUrl}/functions/v1/digiseller-webhook?order_id=${order.id}`,
-          failUrl: `${baseUrl}/order-confirmation?orderId=${order.id}&status=failed`
+          failUrl: `${baseUrl}/order-confirmation?orderId=${order.id}&status=failed`,
+          // Product-based checkout fields
+          digisellerId,
+          quantity: totalQuantity
         }
       });
 
