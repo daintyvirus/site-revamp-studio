@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Settings, 
   Palette, 
@@ -28,34 +29,27 @@ import {
   MessageCircle,
   DollarSign,
   ArrowRightLeft,
-  Banknote
+  Banknote,
+  Home,
+  ShoppingBag,
+  CreditCard,
+  Package,
+  Bell
 } from 'lucide-react';
 
 const categoryIcons: Record<string, React.ReactNode> = {
-  branding: <Palette className="h-4 w-4" />,
+  branding: <Globe className="h-4 w-4" />,
+  appearance: <Palette className="h-4 w-4" />,
+  homepage: <Home className="h-4 w-4" />,
+  shop: <ShoppingBag className="h-4 w-4" />,
+  checkout: <CreditCard className="h-4 w-4" />,
   contact: <Phone className="h-4 w-4" />,
   social: <Share2 className="h-4 w-4" />,
   footer: <FileText className="h-4 w-4" />,
   currency: <DollarSign className="h-4 w-4" />,
-  notifications: <Mail className="h-4 w-4" />,
-};
-
-const settingIcons: Record<string, React.ReactNode> = {
-  site_name: <Globe className="h-4 w-4 text-muted-foreground" />,
-  site_tagline: <FileText className="h-4 w-4 text-muted-foreground" />,
-  contact_email: <Mail className="h-4 w-4 text-muted-foreground" />,
-  contact_phone: <Phone className="h-4 w-4 text-muted-foreground" />,
-  contact_address: <MapPin className="h-4 w-4 text-muted-foreground" />,
-  support_hours: <Clock className="h-4 w-4 text-muted-foreground" />,
-  social_facebook: <Facebook className="h-4 w-4 text-muted-foreground" />,
-  social_twitter: <Twitter className="h-4 w-4 text-muted-foreground" />,
-  social_instagram: <Instagram className="h-4 w-4 text-muted-foreground" />,
-  social_youtube: <Youtube className="h-4 w-4 text-muted-foreground" />,
-  social_discord: <MessageCircle className="h-4 w-4 text-muted-foreground" />,
-  usd_to_bdt_rate: <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />,
-  default_currency: <Banknote className="h-4 w-4 text-muted-foreground" />,
-  show_currency_toggle: <DollarSign className="h-4 w-4 text-muted-foreground" />,
-  admin_notification_email: <Mail className="h-4 w-4 text-muted-foreground" />,
+  notifications: <Bell className="h-4 w-4" />,
+  inventory: <Package className="h-4 w-4" />,
+  seo: <Globe className="h-4 w-4" />,
 };
 
 const categoryLabels: Record<string, { title: string; description: string }> = {
@@ -63,12 +57,28 @@ const categoryLabels: Record<string, { title: string; description: string }> = {
     title: 'Branding', 
     description: 'Customize your site name, logo, and tagline' 
   },
+  appearance: {
+    title: 'Appearance',
+    description: 'Customize colors, theme, and visual styles'
+  },
+  homepage: {
+    title: 'Homepage',
+    description: 'Edit homepage content, hero section, and sections'
+  },
+  shop: {
+    title: 'Shop',
+    description: 'Configure shop page settings and product display'
+  },
+  checkout: {
+    title: 'Checkout',
+    description: 'Customize checkout process and order settings'
+  },
   contact: { 
-    title: 'Contact Information', 
+    title: 'Contact', 
     description: 'Update your contact details shown across the site' 
   },
   social: { 
-    title: 'Social Media', 
+    title: 'Social', 
     description: 'Connect your social media profiles' 
   },
   footer: { 
@@ -83,6 +93,14 @@ const categoryLabels: Record<string, { title: string; description: string }> = {
     title: 'Notifications',
     description: 'Configure email notification settings'
   },
+  inventory: {
+    title: 'Inventory',
+    description: 'Stock and inventory alert settings'
+  },
+  seo: {
+    title: 'SEO',
+    description: 'Search engine optimization settings'
+  },
 };
 
 export default function AdminSiteSettings() {
@@ -91,7 +109,6 @@ export default function AdminSiteSettings() {
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Initialize form values when settings load
   useEffect(() => {
     if (settings) {
       const values: Record<string, string> = {};
@@ -126,7 +143,6 @@ export default function AdminSiteSettings() {
     setHasChanges(false);
   };
 
-  // Group settings by category
   const groupedSettings = settings?.reduce((acc, setting) => {
     if (!acc[setting.category]) {
       acc[setting.category] = [];
@@ -135,8 +151,7 @@ export default function AdminSiteSettings() {
     return acc;
   }, {} as Record<string, SiteSetting[]>) || {};
 
-  // Sort categories in specific order
-  const categoryOrder = ['branding', 'contact', 'social', 'footer', 'notifications', 'currency'];
+  const categoryOrder = ['branding', 'appearance', 'homepage', 'shop', 'checkout', 'contact', 'social', 'footer', 'currency', 'notifications', 'inventory', 'seo'];
   const categories = Object.keys(groupedSettings).sort((a, b) => {
     const aIndex = categoryOrder.indexOf(a);
     const bIndex = categoryOrder.indexOf(b);
@@ -145,6 +160,140 @@ export default function AdminSiteSettings() {
     if (bIndex === -1) return -1;
     return aIndex - bIndex;
   });
+
+  const renderSettingInput = (setting: SiteSetting) => {
+    const value = formValues[setting.id] || '';
+    
+    // Color picker for color settings
+    if (setting.setting_type === 'color' || setting.setting_key.includes('color')) {
+      return (
+        <div className="flex gap-2 items-center">
+          <Input
+            type="color"
+            value={value || '#000000'}
+            onChange={(e) => handleChange(setting.id, e.target.value)}
+            className="w-16 h-10 p-1 cursor-pointer"
+          />
+          <Input
+            value={value}
+            onChange={(e) => handleChange(setting.id, e.target.value)}
+            placeholder="#000000"
+            className="flex-1 font-mono text-sm"
+          />
+          {value && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleChange(setting.id, '')}
+              className="text-xs"
+            >
+              Clear
+            </Button>
+          )}
+        </div>
+      );
+    }
+    
+    // Boolean/toggle settings
+    if (setting.setting_type === 'boolean' || setting.setting_key.includes('enabled') || setting.setting_key.includes('show_')) {
+      return (
+        <div className="flex items-center justify-between py-2">
+          <span className="text-sm text-muted-foreground">{setting.description}</span>
+          <Switch
+            checked={value === 'true'}
+            onCheckedChange={(checked) => handleChange(setting.id, checked ? 'true' : 'false')}
+          />
+        </div>
+      );
+    }
+    
+    // Select for specific fields
+    if (setting.setting_key === 'button_style') {
+      return (
+        <Select value={value} onValueChange={(v) => handleChange(setting.id, v)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select style" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="rounded">Rounded</SelectItem>
+            <SelectItem value="square">Square</SelectItem>
+            <SelectItem value="pill">Pill</SelectItem>
+          </SelectContent>
+        </Select>
+      );
+    }
+    
+    if (setting.setting_key === 'default_sort') {
+      return (
+        <Select value={value} onValueChange={(v) => handleChange(setting.id, v)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select sort order" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Newest First</SelectItem>
+            <SelectItem value="price-low">Price: Low to High</SelectItem>
+            <SelectItem value="price-high">Price: High to Low</SelectItem>
+            <SelectItem value="name">Name A-Z</SelectItem>
+          </SelectContent>
+        </Select>
+      );
+    }
+    
+    if (setting.setting_key === 'default_currency') {
+      return (
+        <div className="flex gap-2">
+          {['BDT', 'USD'].map(currency => (
+            <Button
+              key={currency}
+              variant={value === currency ? 'default' : 'outline'}
+              className="flex-1"
+              onClick={() => handleChange(setting.id, currency)}
+            >
+              {currency === 'BDT' ? '৳ BDT' : '$ USD'}
+            </Button>
+          ))}
+        </div>
+      );
+    }
+    
+    // Textarea for long text
+    if (setting.setting_type === 'textarea' || 
+        setting.setting_key.includes('description') || 
+        setting.setting_key.includes('tagline') || 
+        setting.setting_key.includes('disclaimer') || 
+        setting.setting_key.includes('copyright') ||
+        setting.setting_key.includes('subtitle')) {
+      return (
+        <Textarea
+          value={value}
+          onChange={(e) => handleChange(setting.id, e.target.value)}
+          placeholder={setting.description || ''}
+          rows={3}
+        />
+      );
+    }
+    
+    // Number input
+    if (setting.setting_type === 'number' || setting.setting_key.includes('_amount') || setting.setting_key.includes('_rate') || setting.setting_key.includes('per_page') || setting.setting_key.includes('threshold')) {
+      return (
+        <Input
+          type="number"
+          value={value}
+          onChange={(e) => handleChange(setting.id, e.target.value)}
+          placeholder={setting.description || ''}
+        />
+      );
+    }
+    
+    // Default text input
+    return (
+      <Input
+        value={value}
+        onChange={(e) => handleChange(setting.id, e.target.value)}
+        placeholder={setting.description || ''}
+      />
+    );
+  };
 
   const renderCurrencySettings = () => {
     const currencySettings = groupedSettings['currency'] || [];
@@ -156,16 +305,13 @@ export default function AdminSiteSettings() {
 
     return (
       <div className="space-y-6">
-        {/* Exchange Rate Card */}
         <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-lg">
               <ArrowRightLeft className="h-5 w-5 text-primary" />
               Exchange Rate
             </CardTitle>
-            <CardDescription>
-              Set the conversion rate from USD to BDT
-            </CardDescription>
+            <CardDescription>Set the conversion rate from USD to BDT</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
@@ -186,25 +332,19 @@ export default function AdminSiteSettings() {
                   <Label htmlFor={rateSetting.id} className="text-sm font-medium mb-2 block">
                     Rate (BDT per USD)
                   </Label>
-                  <div className="relative">
-                    <Input
-                      id={rateSetting.id}
-                      type="number"
-                      step="0.01"
-                      min="1"
-                      value={formValues[rateSetting.id] || ''}
-                      onChange={(e) => handleChange(rateSetting.id, e.target.value)}
-                      className="text-lg font-mono pr-12"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                      BDT
-                    </span>
-                  </div>
+                  <Input
+                    id={rateSetting.id}
+                    type="number"
+                    step="0.01"
+                    min="1"
+                    value={formValues[rateSetting.id] || ''}
+                    onChange={(e) => handleChange(rateSetting.id, e.target.value)}
+                    className="text-lg font-mono"
+                  />
                 </div>
               )}
             </div>
 
-            {/* Preview conversions */}
             <div className="mt-6 pt-4 border-t">
               <p className="text-sm text-muted-foreground mb-3">Preview conversions:</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -219,9 +359,7 @@ export default function AdminSiteSettings() {
           </CardContent>
         </Card>
 
-        {/* Currency Display Settings */}
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Default Currency */}
           {defaultCurrencySetting && (
             <Card>
               <CardHeader className="pb-4">
@@ -231,18 +369,7 @@ export default function AdminSiteSettings() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex gap-2">
-                  {['BDT', 'USD'].map(currency => (
-                    <Button
-                      key={currency}
-                      variant={formValues[defaultCurrencySetting.id] === currency ? 'default' : 'outline'}
-                      className="flex-1"
-                      onClick={() => handleChange(defaultCurrencySetting.id, currency)}
-                    >
-                      {currency === 'BDT' ? '৳ BDT' : '$ USD'}
-                    </Button>
-                  ))}
-                </div>
+                {renderSettingInput(defaultCurrencySetting)}
                 <p className="text-xs text-muted-foreground mt-3">
                   New visitors will see prices in this currency by default
                 </p>
@@ -250,7 +377,6 @@ export default function AdminSiteSettings() {
             </Card>
           )}
 
-          {/* Currency Toggle Visibility */}
           {showToggleSetting && (
             <Card>
               <CardHeader className="pb-4">
@@ -263,15 +389,11 @@ export default function AdminSiteSettings() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium">Show currency switcher</p>
-                    <p className="text-sm text-muted-foreground">
-                      Allow users to switch between BDT and USD
-                    </p>
+                    <p className="text-sm text-muted-foreground">Allow users to switch between BDT and USD</p>
                   </div>
                   <Switch
                     checked={formValues[showToggleSetting.id] === 'true'}
-                    onCheckedChange={(checked) => 
-                      handleChange(showToggleSetting.id, checked ? 'true' : 'false')
-                    }
+                    onCheckedChange={(checked) => handleChange(showToggleSetting.id, checked ? 'true' : 'false')}
                   />
                 </div>
                 {formValues[showToggleSetting.id] === 'true' && (
@@ -287,6 +409,61 @@ export default function AdminSiteSettings() {
             </Card>
           )}
         </div>
+      </div>
+    );
+  };
+
+  const renderAppearanceSettings = () => {
+    const appearanceSettings = groupedSettings['appearance'] || [];
+    
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Palette className="h-5 w-5 text-primary" />
+              Theme Colors
+            </CardTitle>
+            <CardDescription>
+              Customize the color scheme of your website. Colors will be applied across all pages.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {appearanceSettings.map(setting => (
+                <div key={setting.id} className="space-y-2">
+                  <Label htmlFor={setting.id} className="flex items-center gap-2 text-sm font-medium">
+                    {setting.label}
+                  </Label>
+                  {renderSettingInput(setting)}
+                  {setting.description && (
+                    <p className="text-xs text-muted-foreground">{setting.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            {/* Color Preview */}
+            <div className="mt-6 pt-6 border-t">
+              <p className="text-sm font-medium mb-4">Live Preview</p>
+              <div className="flex flex-wrap gap-4">
+                {appearanceSettings.filter(s => s.setting_type === 'color').map(setting => {
+                  const color = formValues[setting.id];
+                  if (!color) return null;
+                  return (
+                    <div key={setting.id} className="flex items-center gap-2">
+                      <div 
+                        className="w-8 h-8 rounded-lg border shadow-sm" 
+                        style={{ backgroundColor: color }}
+                      />
+                      <span className="text-sm text-muted-foreground">{setting.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   };
@@ -311,7 +488,7 @@ export default function AdminSiteSettings() {
               Site Settings
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage your site's branding, contact info, and social links
+              Manage all site content, branding, colors, and configuration
             </p>
           </div>
           
@@ -330,9 +507,9 @@ export default function AdminSiteSettings() {
         </div>
 
         <Tabs defaultValue={categories[0]} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-flex">
+          <TabsList className="flex flex-wrap gap-1 h-auto p-1">
             {categories.map(category => (
-              <TabsTrigger key={category} value={category} className="gap-2">
+              <TabsTrigger key={category} value={category} className="gap-2 text-xs sm:text-sm">
                 {categoryIcons[category]}
                 <span className="hidden sm:inline">{categoryLabels[category]?.title || category}</span>
               </TabsTrigger>
@@ -343,6 +520,8 @@ export default function AdminSiteSettings() {
             <TabsContent key={category} value={category}>
               {category === 'currency' ? (
                 renderCurrencySettings()
+              ) : category === 'appearance' ? (
+                renderAppearanceSettings()
               ) : (
                 <Card>
                   <CardHeader>
@@ -359,28 +538,10 @@ export default function AdminSiteSettings() {
                       {groupedSettings[category]?.map(setting => (
                         <div key={setting.id} className="space-y-2">
                           <Label htmlFor={setting.id} className="flex items-center gap-2">
-                            {settingIcons[setting.setting_key]}
                             {setting.label}
                           </Label>
-                          {setting.setting_key.includes('tagline') || 
-                           setting.setting_key.includes('disclaimer') || 
-                           setting.setting_key.includes('copyright') ? (
-                            <Textarea
-                              id={setting.id}
-                              value={formValues[setting.id] || ''}
-                              onChange={(e) => handleChange(setting.id, e.target.value)}
-                              placeholder={setting.description || ''}
-                              rows={3}
-                            />
-                          ) : (
-                            <Input
-                              id={setting.id}
-                              value={formValues[setting.id] || ''}
-                              onChange={(e) => handleChange(setting.id, e.target.value)}
-                              placeholder={setting.description || ''}
-                            />
-                          )}
-                          {setting.description && (
+                          {renderSettingInput(setting)}
+                          {setting.description && setting.setting_type !== 'boolean' && !setting.setting_key.includes('enabled') && !setting.setting_key.includes('show_') && (
                             <p className="text-xs text-muted-foreground">
                               {setting.description}
                             </p>
@@ -395,7 +556,6 @@ export default function AdminSiteSettings() {
           ))}
         </Tabs>
 
-        {/* Preview Card */}
         <Card className="border-dashed">
           <CardHeader>
             <CardTitle className="text-lg">Quick Tips</CardTitle>
@@ -403,7 +563,8 @@ export default function AdminSiteSettings() {
           <CardContent className="text-sm text-muted-foreground space-y-2">
             <p>• Use <code className="bg-muted px-1 rounded">{'{year}'}</code> in copyright text for automatic year updates</p>
             <p>• Leave social media URLs empty to hide them from the footer</p>
-            <p>• Changes take effect immediately after saving</p>
+            <p>• Color changes take effect after saving and refreshing the page</p>
+            <p>• For Homepage section content, use the <strong>Homepage Sections</strong> admin page</p>
           </CardContent>
         </Card>
       </div>

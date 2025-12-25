@@ -157,7 +157,7 @@ export default function ProductDetail() {
               <div className="flex items-center gap-2 text-primary mb-4">
                 <Clock className="h-4 w-4" />
                 <span className="text-sm font-medium uppercase tracking-wider">
-                  {(product as any).delivery_time || 'Instant Delivery'}
+                  {product.delivery_time || 'Instant Delivery'}
                 </span>
               </div>
 

@@ -38,6 +38,7 @@ export interface Product {
   sale_start_date: string | null;
   sale_end_date: string | null;
   product_type: string | null;
+  delivery_time: string | null;
   wc_id: number | null;
   tags: string[] | null;
   created_at: string;

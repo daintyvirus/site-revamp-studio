@@ -143,7 +143,7 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
       flash_sale_enabled: product?.flash_sale_enabled ?? false,
       sale_start_date: product?.sale_start_date ?? null,
       sale_end_date: product?.sale_end_date ?? null,
-      delivery_time: (product as any)?.delivery_time ?? 'Instant Delivery',
+      delivery_time: product?.delivery_time ?? 'Instant Delivery',
     },
   });
 

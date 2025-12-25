@@ -7,6 +7,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CurrencyProvider } from "@/hooks/useCurrency";
 import { AnimatePresence, motion } from "framer-motion";
+import DynamicThemeProvider from "@/components/ThemeProvider";
 
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
@@ -113,13 +114,15 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <CurrencyProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AnimatedRoutes />
-            </BrowserRouter>
-          </TooltipProvider>
+          <DynamicThemeProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <AnimatedRoutes />
+              </BrowserRouter>
+            </TooltipProvider>
+          </DynamicThemeProvider>
         </CurrencyProvider>
       </AuthProvider>
     </QueryClientProvider>
