@@ -122,7 +122,7 @@ export default {
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'profile-gradient': 'linear-gradient(180deg, hsl(330 50% 28%) 0%, hsl(335 45% 22%) 50%, hsl(340 40% 18%) 100%)',
+        'profile-gradient': 'linear-gradient(180deg, hsl(0 50% 15%) 0%, hsl(0 45% 10%) 50%, hsl(0 40% 8%) 100%)',
         'card-gradient': 'linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--secondary)) 100%)',
         'success-gradient': 'linear-gradient(135deg, hsl(145 70% 45% / 0.2) 0%, hsl(145 70% 35% / 0.1) 100%)'
       },

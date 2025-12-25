@@ -805,6 +805,7 @@ export type Database = {
           brand_id: string | null
           category_id: string | null
           created_at: string
+          delivery_time: string | null
           description: string | null
           digiseller_id: number | null
           flash_sale_enabled: boolean
@@ -833,6 +834,7 @@ export type Database = {
           brand_id?: string | null
           category_id?: string | null
           created_at?: string
+          delivery_time?: string | null
           description?: string | null
           digiseller_id?: number | null
           flash_sale_enabled?: boolean
@@ -861,6 +863,7 @@ export type Database = {
           brand_id?: string | null
           category_id?: string | null
           created_at?: string
+          delivery_time?: string | null
           description?: string | null
           digiseller_id?: number | null
           flash_sale_enabled?: boolean

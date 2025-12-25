@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingCart } from 'lucide-react';
+import { Heart, ShoppingCart, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAddToCart } from '@/hooks/useCart';
@@ -149,6 +149,14 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Info */}
         <div className="p-3">
+          {/* Delivery Time */}
+          <div className="flex items-center gap-1 text-primary mb-1.5">
+            <Clock className="h-3 w-3" />
+            <span className="text-[10px] font-medium uppercase tracking-wider">
+              {(product as any).delivery_time || 'Instant'}
+            </span>
+          </div>
+          
           {product.category && (
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{product.category.name}</p>
           )}
