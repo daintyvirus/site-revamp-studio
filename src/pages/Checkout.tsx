@@ -1,16 +1,19 @@
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { X, ShoppingBag, ArrowLeft, ArrowRight, Shield, Zap, CreditCard } from 'lucide-react';
+import { X, ShoppingBag, ArrowLeft, ArrowRight, Shield, Zap, CreditCard, Ticket, Loader2, Check } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { useCheckout } from '@/hooks/useCheckout';
 import { useActivePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useCurrency } from '@/hooks/useCurrency';
+import { useValidateCoupon, Coupon } from '@/hooks/useCoupons';
 import CustomerInfoForm from '@/components/checkout/CustomerInfoForm';
 import PaymentMethodSelector from '@/components/checkout/PaymentMethodSelector';
 import PaymentInstructions from '@/components/checkout/PaymentInstructions';
+import { cn } from '@/lib/utils';
 
 const STORE_NAME = 'GameStore';
 
@@ -22,12 +25,19 @@ export default function Checkout() {
   const { data: paymentMethods, isLoading: methodsLoading } = useActivePaymentMethods();
   const { currency, formatPrice } = useCurrency();
   const checkout = useCheckout();
+  const validateCoupon = useValidateCoupon();
   const navigate = useNavigate();
   
   const [step, setStep] = useState<Step>('info');
   const [customerInfo, setCustomerInfo] = useState({ name: '', email: '', phone: '' });
   const [selectedMethodSlug, setSelectedMethodSlug] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState('');
+  
+  // Coupon state
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponError, setCouponError] = useState('');
 
   const selectedMethod = paymentMethods?.find(m => m.slug === selectedMethodSlug);
 
@@ -41,16 +51,44 @@ export default function Checkout() {
   }, [paymentMethods, currency]);
 
   // Calculate total in BDT (base currency)
-  const totalBDT = cart?.reduce((sum, item) => {
-    const priceBDT = item.product?.price_bdt || (item.product?.price || 0) * 110;
+  const subtotalBDT = cart?.reduce((sum, item) => {
+    const priceBDT = item.product?.sale_price_bdt || item.product?.price_bdt || (item.product?.price || 0) * 110;
     return sum + priceBDT * item.quantity;
   }, 0) ?? 0;
 
   // Calculate total in USD
-  const totalUSD = cart?.reduce((sum, item) => {
+  const subtotalUSD = cart?.reduce((sum, item) => {
     const priceUSD = item.product?.sale_price || item.product?.price || 0;
     return sum + priceUSD * item.quantity;
   }, 0) ?? 0;
+
+  // Final totals after discount
+  const totalBDT = Math.max(0, subtotalBDT - couponDiscount);
+  const totalUSD = Math.max(0, subtotalUSD - (couponDiscount / 110)); // Approximate USD discount
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponError('');
+    
+    try {
+      const result = await validateCoupon.mutateAsync({
+        code: couponCode,
+        orderTotal: subtotalBDT,
+      });
+      
+      setAppliedCoupon(result.coupon);
+      setCouponDiscount(result.discount);
+      setCouponCode('');
+    } catch (error: any) {
+      setCouponError(error.message || 'Invalid coupon code');
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponDiscount(0);
+    setCouponError('');
+  };
 
   if (!user) {
     return (
@@ -58,12 +96,12 @@ export default function Checkout() {
         <div className="min-h-screen bg-background">
           <div className="container mx-auto px-4 py-20 text-center">
             <div className="max-w-md mx-auto">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/20 to-neon-pink/20 flex items-center justify-center border border-primary/30">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border border-primary/30">
                 <ShoppingBag className="h-10 w-10 text-primary" />
               </div>
               <h1 className="font-display text-2xl font-bold mb-2">Sign in to checkout</h1>
               <p className="text-muted-foreground mb-6">You need an account to place orders</p>
-              <Button asChild className="bg-gradient-to-r from-primary to-neon-pink hover:opacity-90">
+              <Button asChild className="bg-gradient-to-r from-primary to-accent hover:opacity-90">
                 <Link to="/auth">Sign In</Link>
               </Button>
             </div>
@@ -92,12 +130,12 @@ export default function Checkout() {
         <div className="min-h-screen bg-background">
           <div className="container mx-auto px-4 py-20 text-center">
             <div className="max-w-md mx-auto">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/20 to-neon-pink/20 flex items-center justify-center border border-primary/30">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border border-primary/30">
                 <ShoppingBag className="h-10 w-10 text-primary" />
               </div>
               <h1 className="font-display text-2xl font-bold mb-2">Your cart is empty</h1>
               <p className="text-muted-foreground mb-6">Add some items before checking out</p>
-              <Button asChild className="bg-gradient-to-r from-primary to-neon-pink hover:opacity-90">
+              <Button asChild className="bg-gradient-to-r from-primary to-accent hover:opacity-90">
                 <Link to="/shop">Browse Products</Link>
               </Button>
             </div>
@@ -118,7 +156,9 @@ export default function Checkout() {
       const result = await checkout.mutateAsync({
         customerInfo,
         paymentMethod: selectedMethodSlug,
-        transactionId: transactionId.trim()
+        transactionId: transactionId.trim(),
+        couponCode: appliedCoupon?.code,
+        discountAmount: couponDiscount,
       });
       // Navigate to order confirmation page with order details
       navigate('/order-confirmation', { 
@@ -144,7 +184,7 @@ export default function Checkout() {
         {/* Background Effects */}
         <div className="fixed inset-0 pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-neon-pink/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
         </div>
 
         <div className="container mx-auto px-4 py-8 relative z-10">
@@ -174,20 +214,20 @@ export default function Checkout() {
                   return (
                     <div key={s.key} className="flex-1 flex items-center">
                       <div className="flex flex-col items-center flex-1">
-                        <div className={`
-                          w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300
-                          ${isActive ? 'bg-gradient-to-br from-primary to-neon-pink text-primary-foreground shadow-lg shadow-primary/30' : ''}
-                          ${isCompleted ? 'bg-success/20 text-success border border-success/30' : ''}
-                          ${!isActive && !isCompleted ? 'bg-card border border-border text-muted-foreground' : ''}
-                        `}>
+                        <div className={cn(
+                          "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300",
+                          isActive && "bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-lg shadow-primary/30",
+                          isCompleted && "bg-success/20 text-success border border-success/30",
+                          !isActive && !isCompleted && "bg-card border border-border text-muted-foreground"
+                        )}>
                           <Icon className="h-5 w-5" />
                         </div>
-                        <span className={`text-xs mt-2 font-medium ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
+                        <span className={cn("text-xs mt-2 font-medium", isActive ? "text-primary" : "text-muted-foreground")}>
                           {s.label}
                         </span>
                       </div>
                       {index < steps.length - 1 && (
-                        <div className={`h-0.5 flex-1 mx-2 mb-6 transition-colors ${isCompleted ? 'bg-success' : 'bg-border'}`} />
+                        <div className={cn("h-0.5 flex-1 mx-2 mb-6 transition-colors", isCompleted ? "bg-success" : "bg-border")} />
                       )}
                     </div>
                   );
@@ -201,7 +241,7 @@ export default function Checkout() {
               <div className="p-6 border-b border-border bg-gradient-to-r from-card to-card/80">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-neon-pink flex items-center justify-center shadow-lg shadow-primary/30">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/30">
                       <span className="text-2xl">🎮</span>
                     </div>
                     <div>
@@ -220,7 +260,7 @@ export default function Checkout() {
               <div className="p-6 sm:p-8">
                 {/* Order Summary Mini */}
                 {step !== 'info' && (
-                  <div className="bg-gradient-to-r from-primary/10 to-neon-pink/10 rounded-xl p-4 mb-6 border border-primary/20">
+                  <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl p-4 mb-6 border border-primary/20">
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
@@ -233,7 +273,12 @@ export default function Checkout() {
                           <span className="text-xs text-muted-foreground">{customerInfo.name}</span>
                         </div>
                       </div>
-                      <span className="font-display font-bold text-xl text-primary">{formatPrice(totalBDT, totalUSD)}</span>
+                      <div className="text-right">
+                        <span className="font-display font-bold text-xl text-primary">{formatPrice(totalBDT, totalUSD)}</span>
+                        {couponDiscount > 0 && (
+                          <span className="block text-xs text-success">-৳{couponDiscount} discount</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -248,11 +293,73 @@ export default function Checkout() {
                     
                     <CustomerInfoForm info={customerInfo} onChange={setCustomerInfo} />
                     
+                    {/* Coupon Code Section */}
+                    <div className="bg-muted/30 rounded-xl p-4 border border-border">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Ticket className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">Have a coupon code?</span>
+                      </div>
+                      
+                      {appliedCoupon ? (
+                        <div className="flex items-center justify-between bg-success/10 border border-success/30 rounded-lg p-3">
+                          <div className="flex items-center gap-2">
+                            <Check className="h-4 w-4 text-success" />
+                            <div>
+                              <code className="font-mono text-sm font-medium">{appliedCoupon.code}</code>
+                              <p className="text-xs text-muted-foreground">
+                                {appliedCoupon.discount_type === 'percentage' 
+                                  ? `${appliedCoupon.discount_value}% off`
+                                  : `৳${appliedCoupon.discount_value} off`
+                                } - Saving ৳{couponDiscount}
+                              </p>
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="sm" onClick={handleRemoveCoupon} className="text-destructive hover:text-destructive">
+                            Remove
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Enter coupon code"
+                            value={couponCode}
+                            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                            className="flex-1 uppercase"
+                          />
+                          <Button 
+                            variant="outline" 
+                            onClick={handleApplyCoupon}
+                            disabled={!couponCode.trim() || validateCoupon.isPending}
+                          >
+                            {validateCoupon.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              'Apply'
+                            )}
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {couponError && (
+                        <p className="text-xs text-destructive mt-2">{couponError}</p>
+                      )}
+                    </div>
+                    
                     {/* Order Total */}
-                    <div className="bg-card/50 rounded-xl p-4 border border-border">
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Order Total</span>
-                        <span className="font-display font-bold text-2xl bg-gradient-to-r from-primary to-neon-pink bg-clip-text text-transparent">
+                    <div className="bg-card/50 rounded-xl p-4 border border-border space-y-2">
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Subtotal</span>
+                        <span>{formatPrice(subtotalBDT, subtotalUSD)}</span>
+                      </div>
+                      {couponDiscount > 0 && (
+                        <div className="flex justify-between text-sm text-success">
+                          <span>Discount ({appliedCoupon?.code})</span>
+                          <span>-৳{couponDiscount}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center pt-2 border-t border-border">
+                        <span className="font-medium">Total</span>
+                        <span className="font-display font-bold text-2xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                           {formatPrice(totalBDT, totalUSD)}
                         </span>
                       </div>
@@ -261,7 +368,7 @@ export default function Checkout() {
                     <Button
                       onClick={() => setStep('method')}
                       disabled={!canProceedFromInfo}
-                      className="w-full h-14 bg-gradient-to-r from-primary to-neon-pink hover:opacity-90 font-semibold text-lg"
+                      className="w-full h-14 bg-gradient-to-r from-primary to-accent hover:opacity-90 font-semibold text-lg"
                       size="lg"
                     >
                       Continue
@@ -291,7 +398,7 @@ export default function Checkout() {
                       <Button
                         onClick={() => setStep('payment')}
                         disabled={!canProceedFromMethod}
-                        className="flex-1 h-12 bg-gradient-to-r from-primary to-neon-pink hover:opacity-90 font-semibold"
+                        className="flex-1 h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 font-semibold"
                       >
                         Pay {formatPrice(totalBDT, totalUSD)}
                       </Button>
