@@ -37,31 +37,21 @@ serve(async (req) => {
     const body: DigisellerPaymentRequest = await req.json();
     console.log("Digiseller payment request:", body);
 
-    // Create payment via Digiseller API
-    // Using the Digiseller pay form method
-    const paymentData = {
-      seller_id: sellerId,
-      product_name: body.productName,
-      amount: body.amount,
-      currency: body.currency === 'BDT' ? 'USD' : body.currency, // Digiseller may not support BDT directly
-      email: body.customerEmail,
-      order_id: body.orderId,
-      success_url: body.returnUrl,
-      fail_url: body.failUrl,
-    };
+    // Round amount to 2 decimal places
+    const amount = Math.round(body.amount * 100) / 100;
 
-    // Generate payment URL for Digiseller
-    // The actual implementation depends on Digiseller's specific API endpoints
-    // This creates a payment form URL that redirects to Digiseller
-    const baseUrl = "https://www.digiseller.market/asp/pay.asp";
+    // Generate payment URL using Digiseller's purchase form
+    // Using the correct endpoint format for DigiSeller payment
+    const baseUrl = "https://www.digiseller.market/asp2/pay_wm.asp";
+    
     const params = new URLSearchParams({
       id_d: sellerId,
-      amount: body.amount.toString(),
-      curr: body.currency === 'BDT' ? 'USD' : body.currency,
-      email: body.customerEmail,
       lang: 'en-US',
+      amount: amount.toString(),
+      curr: body.currency || 'USD',
+      email: body.customerEmail,
       failpage: body.failUrl,
-      o: body.orderId,
+      agent: body.orderId, // Use agent field to pass order ID
     });
 
     const paymentUrl = `${baseUrl}?${params.toString()}`;
