@@ -14,6 +14,9 @@ interface DigisellerPaymentRequest {
   productName: string;
   returnUrl: string;
   failUrl: string;
+  // Product-based checkout fields
+  digisellerId?: number;
+  quantity?: number;
 }
 
 serve(async (req) => {
@@ -37,24 +40,47 @@ serve(async (req) => {
     const body: DigisellerPaymentRequest = await req.json();
     console.log("Digiseller payment request:", body);
 
-    // Round amount to 2 decimal places
-    const amount = Math.round(body.amount * 100) / 100;
+    let paymentUrl: string;
 
-    // Generate payment URL using Digiseller's purchase form
-    // Using the correct endpoint format for DigiSeller payment
-    const baseUrl = "https://www.digiseller.market/asp2/pay_wm.asp";
-    
-    const params = new URLSearchParams({
-      id_d: sellerId,
-      lang: 'en-US',
-      amount: amount.toString(),
-      curr: body.currency || 'USD',
-      email: body.customerEmail,
-      failpage: body.failUrl,
-      agent: body.orderId, // Use agent field to pass order ID
-    });
+    // Check if this is a product-based checkout (has digisellerId)
+    if (body.digisellerId) {
+      // Product-based checkout - use the registered product ID
+      console.log("Using product-based checkout with Digiseller ID:", body.digisellerId);
+      
+      const baseUrl = "https://www.digiseller.market/asp2/pay_wm.asp";
+      const params = new URLSearchParams({
+        id_d: body.digisellerId.toString(),
+        lang: 'en-US',
+        email: body.customerEmail,
+        failpage: body.failUrl,
+        agent: body.orderId,
+      });
+      
+      // Add quantity if more than 1
+      if (body.quantity && body.quantity > 1) {
+        params.set('cnt', body.quantity.toString());
+      }
+      
+      paymentUrl = `${baseUrl}?${params.toString()}`;
+    } else {
+      // Flexible price checkout - use seller ID with custom amount
+      console.log("Using flexible price checkout");
+      
+      const amount = Math.round(body.amount * 100) / 100;
+      const baseUrl = "https://www.digiseller.market/asp2/pay_wm.asp";
+      
+      const params = new URLSearchParams({
+        id_d: sellerId,
+        lang: 'en-US',
+        amount: amount.toString(),
+        curr: body.currency || 'USD',
+        email: body.customerEmail,
+        failpage: body.failUrl,
+        agent: body.orderId,
+      });
 
-    const paymentUrl = `${baseUrl}?${params.toString()}`;
+      paymentUrl = `${baseUrl}?${params.toString()}`;
+    }
 
     console.log("Generated Digiseller payment URL:", paymentUrl);
 

@@ -750,6 +750,7 @@ export type Database = {
       product_variants: {
         Row: {
           created_at: string
+          digiseller_id: number | null
           id: string
           name: string
           price: number
@@ -763,6 +764,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          digiseller_id?: number | null
           id?: string
           name: string
           price: number
@@ -776,6 +778,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          digiseller_id?: number | null
           id?: string
           name?: string
           price?: number
@@ -803,6 +806,7 @@ export type Database = {
           category_id: string | null
           created_at: string
           description: string | null
+          digiseller_id: number | null
           flash_sale_enabled: boolean
           id: string
           image_url: string | null
@@ -830,6 +834,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           description?: string | null
+          digiseller_id?: number | null
           flash_sale_enabled?: boolean
           id?: string
           image_url?: string | null
@@ -857,6 +862,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           description?: string | null
+          digiseller_id?: number | null
           flash_sale_enabled?: boolean
           id?: string
           image_url?: string | null
