@@ -88,59 +88,59 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Link to={`/product/${product.slug}`} className="group block">
-      <div className="relative overflow-hidden rounded-2xl bg-card border border-border/30 transition-all duration-300 card-hover">
+      <div className="relative overflow-hidden rounded-xl bg-card/50 border border-border/40 transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5">
         {/* Image */}
-        <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-secondary to-muted">
+        <div className="relative aspect-square overflow-hidden bg-muted/30">
           {product.image_url ? (
             <img
               src={product.image_url}
               alt={product.name}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
-              <span className="text-5xl text-muted-foreground/30">🎮</span>
+              <span className="text-4xl text-muted-foreground/30">🎮</span>
             </div>
           )}
 
           {/* Badges */}
-          <div className="absolute top-3 left-3 flex flex-col gap-2">
+          <div className="absolute top-2 left-2 flex flex-col gap-1.5">
             {(isFlashSaleActive || hasDiscount) && (
-              <Badge className="bg-destructive text-destructive-foreground text-xs font-bold px-2 py-1">
+              <Badge className="bg-green-500 text-white text-[10px] font-semibold px-2 py-0.5">
                 -{discountPercent}%
               </Badge>
             )}
             {product.stock <= 0 && (
-              <Badge variant="secondary" className="text-xs">Out of Stock</Badge>
+              <Badge variant="secondary" className="text-[10px] bg-muted/80">Out of Stock</Badge>
             )}
           </div>
 
           {/* Wishlist Button */}
           {user && (
             <Button
-              variant="secondary"
+              variant="ghost"
               size="icon"
               className={cn(
-                'absolute top-3 right-3 h-9 w-9 rounded-full bg-background/80 hover:bg-background backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all',
+                'absolute top-2 right-2 h-8 w-8 rounded-full bg-background/70 hover:bg-background backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all border border-border/30',
                 isInWishlist && 'opacity-100'
               )}
               onClick={handleToggleWishlist}
               disabled={toggleWishlist.isPending}
             >
-              <Heart className={cn('h-4 w-4', isInWishlist && 'fill-destructive text-destructive')} />
+              <Heart className={cn('h-4 w-4', isInWishlist && 'fill-red-500 text-red-500')} />
             </Button>
           )}
 
           {/* Quick Add */}
           {product.stock > 0 && user && (
-            <div className="absolute inset-x-3 bottom-3 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
+            <div className="absolute inset-x-2 bottom-2 opacity-0 group-hover:opacity-100 transition-all translate-y-1 group-hover:translate-y-0">
               <Button
                 onClick={handleAddToCart}
                 disabled={addToCart.isPending}
                 size="sm"
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-xl shadow-glow"
+                className="w-full bg-primary/90 hover:bg-primary text-primary-foreground text-xs font-medium rounded-lg h-8"
               >
-                <ShoppingCart className="h-4 w-4 mr-2" />
+                <ShoppingCart className="h-3.5 w-3.5 mr-1.5" />
                 Add to Cart
               </Button>
             </div>
@@ -148,29 +148,29 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Info */}
-        <div className="p-4">
+        <div className="p-3">
           {product.category && (
-            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">{product.category.name}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{product.category.name}</p>
           )}
-          <h3 className="font-display font-semibold text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+          <h3 className="font-medium text-sm text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors leading-snug">
             {product.name}
           </h3>
           
           {isFlashSaleActive && saleEndDate && (
-            <div className="mb-2">
+            <div className="mb-1.5">
               <CountdownDisplay endDate={product.sale_end_date!} />
             </div>
           )}
           
           <div className="flex items-center gap-2">
             <span className={cn(
-              "font-display text-lg font-bold",
-              isFlashSaleActive ? "text-primary" : "text-foreground"
+              "font-semibold text-sm",
+              isFlashSaleActive ? "text-green-500" : "text-foreground"
             )}>
               {formatPrice(displayPriceBDT, displayPriceUSD)}
             </span>
             {hasDiscount && (
-              <span className="text-sm text-muted-foreground line-through">
+              <span className="text-xs text-muted-foreground line-through">
                 {formatPrice(product.price_bdt, product.price)}
               </span>
             )}

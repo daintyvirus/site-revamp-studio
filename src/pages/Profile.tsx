@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { User, Package, Heart, Settings, ChevronRight, Download, Shield, LogOut, Wallet, ExternalLink } from 'lucide-react';
+import { User, Package, Heart, Settings, ChevronRight, Download, Shield, LogOut, Wallet, ExternalLink, CheckCircle2, Copy, Eye, EyeOff } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrders } from '@/hooks/useOrders';
 import { useWishlist, useToggleWishlist } from '@/hooks/useWishlist';
@@ -18,6 +19,7 @@ import { generateInvoicePDF } from '@/lib/generateInvoice';
 import { useCurrency } from '@/hooks/useCurrency';
 import type { Order } from '@/types/database';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 type TabType = 'orders' | 'wishlist' | 'profile' | 'settings';
 
@@ -26,8 +28,16 @@ const statusColors: Record<string, string> = {
   processing: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   shipped: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
   completed: 'bg-green-500/20 text-green-400 border-green-500/30',
+  delivered: 'bg-green-500/20 text-green-400 border-green-500/30',
   cancelled: 'bg-red-500/20 text-red-400 border-red-500/30',
   refunded: 'bg-muted-foreground/20 text-muted-foreground border-muted-foreground/30',
+};
+
+const paymentStatusColors: Record<string, string> = {
+  pending: 'bg-yellow-500/20 text-yellow-400',
+  paid: 'bg-green-500/20 text-green-400',
+  failed: 'bg-red-500/20 text-red-400',
+  refunded: 'bg-muted-foreground/20 text-muted-foreground',
 };
 
 function formatPrice(amount: number, currency: string): string {
@@ -50,6 +60,8 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [phone, setPhone] = useState(profile?.phone || '');
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [showDeliveryInfo, setShowDeliveryInfo] = useState(false);
   
   // Preferences state
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -101,11 +113,16 @@ export default function Profile() {
     toggleWishlist.mutate(productId);
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard');
+  };
+
   const sidebarItems = [
-    { id: 'orders' as TabType, label: 'My Orders', icon: Package },
-    { id: 'wishlist' as TabType, label: 'Wishlist', icon: Heart },
-    { id: 'profile' as TabType, label: 'Profile', icon: Settings },
-    { id: 'settings' as TabType, label: '2FA Settings', icon: Shield, badge: 'OFF' },
+    { id: 'orders' as TabType, label: 'My Orders', description: 'View and track your purchases', icon: Package },
+    { id: 'wishlist' as TabType, label: 'Wishlists', description: 'Track your desire items', icon: Heart },
+    { id: 'profile' as TabType, label: 'Profile', description: 'Personalize your preferences', icon: User },
+    { id: 'settings' as TabType, label: '2FA Settings', description: 'Security settings', icon: Shield, badge: 'OFF' },
   ];
 
   return (
@@ -114,30 +131,33 @@ export default function Profile() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Sidebar */}
-            <div className="w-full lg:w-72 flex-shrink-0">
-              <div className="bg-card/50 backdrop-blur-sm border border-border/30 rounded-2xl p-5 sticky top-24">
+            <div className="w-full lg:w-80 flex-shrink-0">
+              <div className="bg-card/30 backdrop-blur-sm border border-border/30 rounded-2xl p-5 sticky top-24">
                 {/* User Info */}
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold text-lg">
                     {profile?.full_name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase()}
                   </div>
                   <div className="min-w-0">
                     <h2 className="font-semibold text-foreground truncate">
                       {profile?.full_name || 'Welcome!'}
                     </h2>
-                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    <p className="text-xs text-muted-foreground">Personalize your preferences</p>
                   </div>
                 </div>
 
                 {/* Wallet Summary */}
-                <div className="bg-muted/30 rounded-xl p-4 mb-5">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Wallet</p>
+                <div className="bg-muted/20 rounded-xl p-4 mb-5 border border-border/20">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">WALLET</p>
+                  <p className="text-xs text-muted-foreground mb-3">Monitor your transactions</p>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Wallet className="h-4 w-4 text-primary" />
-                      <span className="font-semibold">{orders?.length || 0}</span>
-                      <span className="text-sm text-muted-foreground">Orders</span>
+                      <Wallet className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">0 USD</span>
                     </div>
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0 rounded-full border border-border/30">
+                      +
+                    </Button>
                   </div>
                 </div>
 
@@ -148,16 +168,26 @@ export default function Profile() {
                       key={item.id}
                       onClick={() => setActiveTab(item.id)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left text-sm",
+                        "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left",
                         activeTab === item.id
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                          ? "bg-muted/50 border border-primary/30"
+                          : "hover:bg-muted/30 border border-transparent"
                       )}
                     >
-                      <item.icon className="h-4 w-4" />
-                      <span className="flex-1">{item.label}</span>
+                      <div className={cn(
+                        "w-10 h-10 rounded-lg flex items-center justify-center",
+                        activeTab === item.id ? "bg-primary/20" : "bg-muted/50"
+                      )}>
+                        <item.icon className={cn("h-5 w-5", activeTab === item.id ? "text-primary" : "text-muted-foreground")} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={cn("font-medium text-sm", activeTab === item.id ? "text-foreground" : "text-muted-foreground")}>
+                          {item.label}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground truncate">{item.description}</p>
+                      </div>
                       {item.badge && (
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                        <Badge variant={item.badge === 'OFF' ? 'destructive' : 'default'} className="text-[10px] px-2 py-0.5">
                           {item.badge}
                         </Badge>
                       )}
@@ -169,11 +199,13 @@ export default function Profile() {
                 <Separator className="my-5" />
                 <Button 
                   variant="ghost" 
-                  className="w-full justify-start text-muted-foreground hover:text-destructive"
+                  className="w-full justify-start text-muted-foreground hover:text-destructive gap-3 px-4"
                   onClick={handleSignOut}
                 >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
+                  <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center">
+                    <LogOut className="h-5 w-5" />
+                  </div>
+                  <span>Logout</span>
                 </Button>
               </div>
             </div>
@@ -183,16 +215,14 @@ export default function Profile() {
               {/* Orders Tab */}
               {activeTab === 'orders' && (
                 <div className="space-y-4">
-                  <h1 className="text-xl font-semibold mb-4">My Orders</h1>
-
                   {ordersLoading ? (
                     <div className="space-y-3">
                       {[1, 2, 3].map(i => (
-                        <div key={i} className="h-24 bg-muted animate-pulse rounded-xl" />
+                        <div key={i} className="h-24 bg-muted/30 animate-pulse rounded-xl" />
                       ))}
                     </div>
                   ) : !orders?.length ? (
-                    <Card className="border-border/30">
+                    <Card className="border-border/30 bg-card/30">
                       <CardContent className="py-12 text-center">
                         <Package className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                         <p className="text-muted-foreground mb-4">No orders yet</p>
@@ -205,74 +235,60 @@ export default function Profile() {
                     <div className="space-y-3">
                       {orders.map((order) => {
                         const orderCurrency = (order as any).currency || 'BDT';
+                        const isDelivered = order.status === 'completed' || order.status === 'delivered';
                         
                         return (
-                          <Card key={order.id} className="border-border/30 overflow-hidden">
+                          <Card 
+                            key={order.id} 
+                            className={cn(
+                              "border-border/30 bg-card/30 overflow-hidden cursor-pointer transition-all hover:border-primary/30",
+                              isDelivered && "border-l-4 border-l-green-500"
+                            )}
+                            onClick={() => setSelectedOrder(order)}
+                          >
                             <CardContent className="p-4">
-                              <div className="flex items-start gap-4">
-                                {/* Order Image */}
-                                <div className="w-16 h-16 rounded-lg bg-muted/50 overflow-hidden flex-shrink-0">
-                                  {order.items?.[0]?.product?.image_url ? (
-                                    <img 
-                                      src={order.items[0].product.image_url} 
-                                      alt="" 
-                                      className="w-full h-full object-cover"
-                                    />
+                              <div className="flex items-center gap-4">
+                                {/* Status Icon */}
+                                <div className={cn(
+                                  "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
+                                  isDelivered ? "bg-green-500/20" : "bg-muted/50"
+                                )}>
+                                  {isDelivered ? (
+                                    <CheckCircle2 className="h-5 w-5 text-green-500" />
                                   ) : (
-                                    <div className="w-full h-full flex items-center justify-center">
-                                      <Package className="h-6 w-6 text-muted-foreground" />
-                                    </div>
+                                    <Package className="h-5 w-5 text-muted-foreground" />
                                   )}
                                 </div>
 
                                 {/* Order Info */}
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div>
-                                      <p className="font-medium text-sm">
-                                        {order.items?.[0]?.product?.name || 'Order'}
-                                        {(order.items?.length ?? 0) > 1 && (
-                                          <span className="text-muted-foreground"> +{(order.items?.length ?? 0) - 1} more</span>
-                                        )}
-                                      </p>
-                                      <p className="text-xs text-muted-foreground mt-0.5">
-                                        {format(new Date(order.created_at), 'MMM dd, yyyy')}
-                                      </p>
-                                    </div>
-                                    <p className="font-semibold text-sm">{formatPrice(order.total, orderCurrency)}</p>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <p className="font-medium text-sm">
+                                      GB/ORDER-{order.id.slice(0, 6).toUpperCase()}
+                                    </p>
+                                    <span className="text-xs text-muted-foreground">
+                                      {format(new Date(order.created_at), 'MMM dd, yyyy')}
+                                    </span>
                                   </div>
-
-                                  <div className="flex items-center gap-2 mt-2">
-                                    <Badge className={cn("text-[10px]", statusColors[order.status])}>
-                                      {order.status.toUpperCase()}
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <Badge className={cn("text-[10px] border", paymentStatusColors[order.payment_status])}>
+                                      PAYMENT.{order.payment_status.toUpperCase()}
                                     </Badge>
-                                    <Badge className={cn("text-[10px]", order.payment_status === 'paid' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400')}>
-                                      {order.payment_status.toUpperCase()}
+                                    <Badge variant="outline" className="text-[10px]">
+                                      {order.items?.length || 0} ITEM{(order.items?.length || 0) > 1 ? 'S' : ''}
                                     </Badge>
+                                    {order.items?.[0]?.product?.name && (
+                                      <Badge variant="secondary" className="text-[10px]">
+                                        {order.items[0].product.name}
+                                      </Badge>
+                                    )}
                                   </div>
+                                </div>
 
-                                  <div className="flex items-center gap-2 mt-3">
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      className="h-7 text-xs"
-                                      onClick={() => handleDownloadInvoice(order)}
-                                    >
-                                      <Download className="h-3 w-3 mr-1" />
-                                      Invoice
-                                    </Button>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm" 
-                                      className="h-7 text-xs"
-                                      asChild
-                                    >
-                                      <Link to={`/track-order?id=${order.id}`}>
-                                        Track Order
-                                        <ExternalLink className="h-3 w-3 ml-1" />
-                                      </Link>
-                                    </Button>
-                                  </div>
+                                {/* Price & Arrow */}
+                                <div className="flex items-center gap-3">
+                                  <p className="font-semibold text-sm">{formatPrice(order.total, orderCurrency)}</p>
+                                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
                                 </div>
                               </div>
                             </CardContent>
@@ -284,19 +300,193 @@ export default function Profile() {
                 </div>
               )}
 
+              {/* Order Details Dialog */}
+              <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card/95 backdrop-blur-md border-border/50">
+                  {selectedOrder && (
+                    <>
+                      <DialogHeader className="text-center pb-4">
+                        <div className="flex justify-center mb-4">
+                          <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center">
+                            <CheckCircle2 className="h-8 w-8 text-green-500" />
+                          </div>
+                        </div>
+                        <DialogTitle className="text-2xl font-semibold">
+                          {selectedOrder.status === 'completed' || selectedOrder.status === 'delivered' 
+                            ? 'Your order has been delivered'
+                            : `Order ${selectedOrder.status}`
+                          }
+                        </DialogTitle>
+                        <p className="text-muted-foreground">
+                          All set! Your order is complete and your items have been delivered. Enjoy!
+                        </p>
+                      </DialogHeader>
+
+                      <div className="grid lg:grid-cols-2 gap-6 mt-4">
+                        {/* Left - Product Info */}
+                        <div className="space-y-4">
+                          {/* Product Card */}
+                          <div className="bg-muted/30 rounded-xl p-4 border border-border/30">
+                            <div className="flex gap-4">
+                              <div className="w-24 h-24 rounded-lg bg-muted/50 overflow-hidden flex-shrink-0">
+                                {selectedOrder.items?.[0]?.product?.image_url ? (
+                                  <img 
+                                    src={selectedOrder.items[0].product.image_url} 
+                                    alt="" 
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <Package className="h-8 w-8 text-muted-foreground" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-lg mb-1">
+                                  {selectedOrder.items?.[0]?.product?.name || 'Product'}
+                                </h3>
+                                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">ABOUT THIS ITEM</p>
+                                <p className="text-sm text-muted-foreground line-clamp-3">
+                                  {selectedOrder.items?.[0]?.product?.short_description || selectedOrder.items?.[0]?.product?.description || 'Digital product delivered instantly.'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Delivery Status */}
+                          <div className="text-center py-4">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">DELIVERY STATUS</p>
+                            <Badge className={cn(
+                              "px-6 py-2 text-sm font-semibold",
+                              selectedOrder.status === 'completed' || selectedOrder.status === 'delivered'
+                                ? "bg-green-500 text-white"
+                                : statusColors[selectedOrder.status]
+                            )}>
+                              {selectedOrder.status === 'completed' ? 'DELIVERED' : selectedOrder.status.toUpperCase()}
+                            </Badge>
+                          </div>
+
+                          {/* How to Redeem */}
+                          {(selectedOrder.delivery_info || (selectedOrder as any).delivery_instructions) && (
+                            <div className="bg-muted/20 rounded-xl p-4 border border-border/30">
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                </div>
+                                <h4 className="font-semibold uppercase text-sm">HOW TO REDEEM</h4>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {(selectedOrder as any).delivery_instructions || 'Follow these instructions to redeem your purchase without a hitch.'}
+                              </p>
+                              <Button variant="outline" size="sm" className="mt-3">
+                                VIEW STEPS
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Right - Order Details */}
+                        <div className="space-y-4">
+                          {/* Voucher/Delivery Info */}
+                          {selectedOrder.delivery_info && (
+                            <div className="bg-muted/30 rounded-xl p-4 border border-border/30">
+                              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">VOUCHER CODE</p>
+                              <div className="flex items-center gap-2 bg-background/50 rounded-lg p-3 border border-border/30">
+                                <code className="flex-1 font-mono text-sm">
+                                  {showDeliveryInfo ? selectedOrder.delivery_info : '••••••••••••••••'}
+                                </code>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => setShowDeliveryInfo(!showDeliveryInfo)}
+                                >
+                                  {showDeliveryInfo ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => copyToClipboard(selectedOrder.delivery_info || '')}
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Order Summary */}
+                          <div className="bg-muted/30 rounded-xl p-4 border border-border/30 space-y-4">
+                            <div>
+                              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">ORDER ID</p>
+                              <p className="font-semibold">GB/ORDER-{selectedOrder.id.slice(0, 6).toUpperCase()}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">ORDER STATUS</p>
+                              <Badge className={cn("px-4 py-1", statusColors[selectedOrder.status])}>
+                                {selectedOrder.status === 'completed' ? 'COMPLETED' : selectedOrder.status.toUpperCase()}
+                              </Badge>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">ORDER DATE</p>
+                              <p className="font-semibold">
+                                {format(new Date(selectedOrder.created_at), "MMM dd, yyyy, hh:mm:ss a")}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">PAYMENT STATUS</p>
+                              <Badge className={cn("px-4 py-1", paymentStatusColors[selectedOrder.payment_status])}>
+                                {selectedOrder.payment_status.toUpperCase()}
+                              </Badge>
+                            </div>
+                            <Separator />
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm text-muted-foreground">Total Amount</p>
+                              <p className="font-bold text-lg">
+                                {formatPrice(selectedOrder.total, (selectedOrder as any).currency || 'BDT')}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              className="flex-1"
+                              onClick={() => handleDownloadInvoice(selectedOrder)}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Invoice
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              className="flex-1"
+                              asChild
+                            >
+                              <Link to={`/track-order?id=${selectedOrder.id}`}>
+                                Track Order
+                                <ExternalLink className="h-4 w-4 ml-2" />
+                              </Link>
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </DialogContent>
+              </Dialog>
+
               {/* Wishlist Tab */}
               {activeTab === 'wishlist' && (
                 <div className="space-y-4">
-                  <h1 className="text-xl font-semibold mb-4">My Wishlist</h1>
-
                   {wishlistLoading ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="h-40 bg-muted animate-pulse rounded-xl" />
+                        <div key={i} className="h-40 bg-muted/30 animate-pulse rounded-xl" />
                       ))}
                     </div>
                   ) : !wishlist?.length ? (
-                    <Card className="border-border/30">
+                    <Card className="border-border/30 bg-card/30">
                       <CardContent className="py-12 text-center">
                         <Heart className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                         <p className="text-muted-foreground mb-4">Your wishlist is empty</p>
@@ -306,10 +496,10 @@ export default function Profile() {
                       </CardContent>
                     </Card>
                   ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                       {wishlist.map((item) => (
-                        <Card key={item.id} className="border-border/30 overflow-hidden group">
-                          <div className="relative aspect-square bg-muted/30">
+                        <Card key={item.id} className="border-border/30 bg-card/30 overflow-hidden group">
+                          <div className="relative aspect-square bg-muted/20">
                             {item.product?.image_url ? (
                               <img
                                 src={item.product.image_url}
@@ -358,7 +548,7 @@ export default function Profile() {
                     )}
                   </div>
 
-                  <Card className="border-border/30">
+                  <Card className="border-border/30 bg-card/30">
                     <CardContent className="p-5 space-y-4">
                       <div className="space-y-2">
                         <Label>Full Name</Label>
@@ -367,11 +557,12 @@ export default function Profile() {
                           onChange={(e) => setFullName(e.target.value)}
                           disabled={!isEditing}
                           placeholder="Enter your name"
+                          className="bg-muted/30 border-border/30"
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>Email</Label>
-                        <Input value={user.email || ''} disabled />
+                        <Input value={user.email || ''} disabled className="bg-muted/30 border-border/30" />
                       </div>
                       <div className="space-y-2">
                         <Label>Phone Number</Label>
@@ -380,6 +571,7 @@ export default function Profile() {
                           onChange={(e) => setPhone(e.target.value)}
                           disabled={!isEditing}
                           placeholder="Enter your phone"
+                          className="bg-muted/30 border-border/30"
                         />
                       </div>
                       
@@ -403,7 +595,7 @@ export default function Profile() {
                 <div className="space-y-4">
                   <h1 className="text-xl font-semibold mb-4">Security Settings</h1>
 
-                  <Card className="border-border/30">
+                  <Card className="border-border/30 bg-card/30">
                     <CardContent className="p-5">
                       <div className="flex items-center justify-between">
                         <div>
@@ -415,7 +607,7 @@ export default function Profile() {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-border/30">
+                  <Card className="border-border/30 bg-card/30">
                     <CardContent className="p-5 space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
