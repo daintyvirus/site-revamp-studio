@@ -128,10 +128,27 @@
 
   html {
     scroll-behavior: smooth;
+    /* Dynamic CSS Variables with fallbacks */
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-size-base: 16px;
+    --container-max-width: 1400px;
+    --section-spacing: 80px;
+    --button-radius: 8px;
+    --card-radius: 12px;
+  }
+
+  /* Reduce motion for accessibility */
+  html.reduce-motion * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 
   body {
-    @apply bg-background text-foreground font-body antialiased;
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-body);
+    font-size: var(--font-size-base);
     font-feature-settings: "kern" 1, "liga" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -145,8 +162,10 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display tracking-tight;
+    font-family: var(--font-display);
+    @apply tracking-tight;
     text-wrap: balance;
+    color: var(--heading-color, inherit);
   }
 
   h1 {
@@ -163,6 +182,16 @@
 
   p {
     @apply leading-relaxed;
+  }
+
+  /* Dynamic link styling */
+  a:not(.no-link-style) {
+    color: var(--link-color, inherit);
+    transition: color 0.2s ease;
+  }
+  
+  a:not(.no-link-style):hover {
+    color: var(--link-hover-color, hsl(var(--primary)));
   }
 }
 
