@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, CheckCircle, XCircle, Clock, Loader2, Package, Download } from 'lucide-react';
+import { Eye, CheckCircle, XCircle, Clock, Loader2, Package, Download, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/select';
 import { useAdminOrders, useUpdateOrderStatus, useUpdatePaymentStatus } from '@/hooks/useOrders';
 import { DeliveryManagementDialog } from '@/components/admin/DeliveryManagementDialog';
+import OrderTimeline from '@/components/orders/OrderTimeline';
 import type { Order } from '@/types/database';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,9 +53,32 @@ export default function AdminOrders() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [deliveryOrder, setDeliveryOrder] = useState<Order | null>(null);
   const [sendingNotification, setSendingNotification] = useState(false);
+  const [sendingInvoice, setSendingInvoice] = useState(false);
   const { data: orders, isLoading } = useAdminOrders();
   const updateStatus = useUpdateOrderStatus();
   const updatePaymentStatus = useUpdatePaymentStatus();
+
+  const sendInvoiceEmail = async (order: Order) => {
+    if (!order.customer_email) {
+      toast.error('No customer email provided');
+      return;
+    }
+
+    try {
+      setSendingInvoice(true);
+      const { data, error } = await supabase.functions.invoke('send-invoice-email', {
+        body: { orderId: order.id }
+      });
+
+      if (error) throw error;
+      toast.success(`Invoice email sent to ${order.customer_email}`);
+    } catch (error: any) {
+      console.error('Error sending invoice email:', error);
+      toast.error('Failed to send invoice email');
+    } finally {
+      setSendingInvoice(false);
+    }
+  };
 
   const sendShippingNotification = async (order: Order) => {
     if (!order.customer_email) {
@@ -486,16 +510,39 @@ export default function AdminOrders() {
                 )}
               </div>
 
-              {/* Invoice Download */}
+              {/* Order Timeline */}
               <div className="border-t border-border pt-4">
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => generateInvoicePDF(selectedOrder)}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Invoice PDF
-                </Button>
+                <OrderTimeline 
+                  orderId={selectedOrder.id}
+                  orderCreatedAt={selectedOrder.created_at}
+                  currentStatus={selectedOrder.status}
+                  currentPaymentStatus={selectedOrder.payment_status}
+                />
+              </div>
+
+              {/* Invoice Actions */}
+              <div className="border-t border-border pt-4">
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => generateInvoicePDF(selectedOrder)}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Invoice
+                  </Button>
+                  {selectedOrder.status === 'completed' && selectedOrder.customer_email && (
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => sendInvoiceEmail(selectedOrder)}
+                      disabled={sendingInvoice}
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      {sendingInvoice ? 'Sending...' : 'Email Invoice'}
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           )}

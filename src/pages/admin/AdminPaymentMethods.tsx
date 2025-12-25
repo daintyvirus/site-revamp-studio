@@ -229,6 +229,8 @@ export default function AdminPaymentMethods() {
                     <SelectItem value="mobile_banking">Mobile Banking</SelectItem>
                     <SelectItem value="net_banking">Net Banking</SelectItem>
                     <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="digiseller">Digiseller</SelectItem>
+                    <SelectItem value="crypto">Cryptocurrency</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
