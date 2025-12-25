@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { User, Mail, Phone, Package, Heart, Settings, Edit2, Save, X, ChevronRight, Download, ShoppingCart, Shield, LogOut, Wallet } from 'lucide-react';
+import { User, Package, Heart, Settings, ChevronRight, Download, Shield, LogOut, Wallet, ExternalLink } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrders } from '@/hooks/useOrders';
-import { useWishlist } from '@/hooks/useWishlist';
+import { useWishlist, useToggleWishlist } from '@/hooks/useWishlist';
 import { useUpdateProfile } from '@/hooks/useProfile';
 import { generateInvoicePDF } from '@/lib/generateInvoice';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -43,6 +43,7 @@ export default function Profile() {
   const { data: wishlist, isLoading: wishlistLoading } = useWishlist();
   const { formatPrice: formatCurrencyPrice } = useCurrency();
   const updateProfile = useUpdateProfile();
+  const toggleWishlist = useToggleWishlist();
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState<TabType>('orders');
@@ -59,7 +60,7 @@ export default function Profile() {
       <Layout>
         <div className="container mx-auto px-4 py-20 text-center">
           <User className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-          <h1 className="font-display text-2xl font-bold mb-2">Sign in to view your profile</h1>
+          <h1 className="text-xl font-semibold mb-2">Sign in to view your profile</h1>
           <p className="text-muted-foreground mb-6">Access your account, orders, and preferences</p>
           <Button asChild>
             <Link to="/auth">Sign In</Link>
@@ -96,92 +97,79 @@ export default function Profile() {
     navigate('/');
   };
 
-  const recentOrders = orders?.slice(0, 5) || [];
-  const totalSpent = orders?.reduce((sum, order) => {
-    if (order.payment_status === 'paid') {
-      return sum + Number(order.total);
-    }
-    return sum;
-  }, 0) || 0;
+  const handleRemoveFromWishlist = (productId: string) => {
+    toggleWishlist.mutate(productId);
+  };
 
   const sidebarItems = [
-    { id: 'orders' as TabType, label: 'My Orders', description: 'View and track your purchases', icon: Package },
-    { id: 'wishlist' as TabType, label: 'Wishlists', description: 'Track your desire items', icon: Heart },
-    { id: 'profile' as TabType, label: 'Profile', description: 'Personalize your preferences', icon: Settings },
-    { id: 'settings' as TabType, label: '2FA Settings', description: 'For extra security', icon: Shield, badge: 'DISABLED' },
+    { id: 'orders' as TabType, label: 'My Orders', icon: Package },
+    { id: 'wishlist' as TabType, label: 'Wishlist', icon: Heart },
+    { id: 'profile' as TabType, label: 'Profile', icon: Settings },
+    { id: 'settings' as TabType, label: '2FA Settings', icon: Shield, badge: 'OFF' },
   ];
 
   return (
     <Layout>
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col lg:flex-row gap-6">
-            {/* Sidebar - Kryptomate Style */}
-            <div className="w-full lg:w-80 flex-shrink-0">
-              <div className="profile-sidebar-gradient rounded-2xl p-6 text-white sticky top-24">
+            {/* Sidebar */}
+            <div className="w-full lg:w-72 flex-shrink-0">
+              <div className="bg-card/50 backdrop-blur-sm border border-border/30 rounded-2xl p-5 sticky top-24">
                 {/* User Info */}
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-accent to-accent/60 flex items-center justify-center text-accent-foreground text-xl font-bold">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold">
                     {profile?.full_name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase()}
                   </div>
-                  <div>
-                    <h2 className="font-display font-bold text-lg">
+                  <div className="min-w-0">
+                    <h2 className="font-semibold text-foreground truncate">
                       {profile?.full_name || 'Welcome!'}
                     </h2>
-                    <p className="text-white/70 text-sm">Personalize your preferences</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                   </div>
                 </div>
 
-                {/* Wallet Section */}
-                <div className="bg-white/10 rounded-xl p-4 mb-6 backdrop-blur-sm">
-                  <p className="text-xs text-white/60 uppercase tracking-wider mb-2">WALLET</p>
-                  <p className="text-sm text-white/70 mb-3">Monitor your transactions</p>
+                {/* Wallet Summary */}
+                <div className="bg-muted/30 rounded-xl p-4 mb-5">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Wallet</p>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Wallet className="h-4 w-4 text-white/60" />
-                      <span className="font-mono font-medium">{orders?.length || 0}</span>
-                      <span className="text-white/60 text-sm">Orders</span>
+                      <Wallet className="h-4 w-4 text-primary" />
+                      <span className="font-semibold">{orders?.length || 0}</span>
+                      <span className="text-sm text-muted-foreground">Orders</span>
                     </div>
-                    <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20">
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
                   </div>
                 </div>
 
                 {/* Navigation */}
-                <div className="space-y-2">
+                <nav className="space-y-1">
                   {sidebarItems.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => setActiveTab(item.id)}
                       className={cn(
-                        "w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left",
+                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left text-sm",
                         activeTab === item.id
-                          ? "bg-white/20 backdrop-blur-sm"
-                          : "hover:bg-white/10"
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                       )}
                     >
-                      <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                        <item.icon className="h-5 w-5 text-white/80" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-white">{item.label}</p>
-                        <p className="text-xs text-white/60 truncate">{item.description}</p>
-                      </div>
+                      <item.icon className="h-4 w-4" />
+                      <span className="flex-1">{item.label}</span>
                       {item.badge && (
-                        <Badge variant="secondary" className="bg-destructive/20 text-destructive text-xs">
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                           {item.badge}
                         </Badge>
                       )}
                     </button>
                   ))}
-                </div>
+                </nav>
 
                 {/* Sign Out */}
-                <Separator className="my-6 bg-white/20" />
+                <Separator className="my-5" />
                 <Button 
                   variant="ghost" 
-                  className="w-full justify-start text-white/80 hover:text-white hover:bg-white/10"
+                  className="w-full justify-start text-muted-foreground hover:text-destructive"
                   onClick={handleSignOut}
                 >
                   <LogOut className="h-4 w-4 mr-2" />
@@ -194,132 +182,97 @@ export default function Profile() {
             <div className="flex-1 min-w-0">
               {/* Orders Tab */}
               {activeTab === 'orders' && (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h1 className="font-display text-2xl font-bold">My Orders</h1>
-                    <Button asChild variant="outline">
-                      <Link to="/orders">View All Orders</Link>
-                    </Button>
-                  </div>
+                <div className="space-y-4">
+                  <h1 className="text-xl font-semibold mb-4">My Orders</h1>
 
                   {ordersLoading ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {[1, 2, 3].map(i => (
-                        <div key={i} className="h-32 bg-muted animate-pulse rounded-xl" />
+                        <div key={i} className="h-24 bg-muted animate-pulse rounded-xl" />
                       ))}
                     </div>
-                  ) : recentOrders.length === 0 ? (
-                    <Card className="border-border/50">
-                      <CardContent className="pt-8 text-center">
-                        <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                  ) : !orders?.length ? (
+                    <Card className="border-border/30">
+                      <CardContent className="py-12 text-center">
+                        <Package className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                         <p className="text-muted-foreground mb-4">No orders yet</p>
-                        <Button asChild>
+                        <Button asChild size="sm">
                           <Link to="/shop">Start Shopping</Link>
                         </Button>
                       </CardContent>
                     </Card>
                   ) : (
-                    <div className="space-y-4">
-                      {recentOrders.map((order) => {
+                    <div className="space-y-3">
+                      {orders.map((order) => {
                         const orderCurrency = (order as any).currency || 'BDT';
-                        const isCompleted = order.status === 'completed';
                         
                         return (
-                          <Card key={order.id} className="border-border/50 overflow-hidden">
-                            {/* Status Header */}
-                            {isCompleted && (
-                              <div className="bg-primary/10 border-b border-primary/20 p-4 flex items-center gap-4">
-                                <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center">
-                                  <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                </div>
-                                <div>
-                                  <Badge className="status-completed mb-1">COMPLETED</Badge>
-                                  <h3 className="font-display font-bold text-lg">Your order has been delivered</h3>
-                                  <p className="text-sm text-muted-foreground">All set! Your order is complete and your items have been delivered. Enjoy!</p>
-                                </div>
-                              </div>
-                            )}
-
-                            <CardContent className="p-6">
-                              <div className="flex flex-col md:flex-row gap-6">
-                                {/* Order Items */}
-                                <div className="flex-1">
-                                  <h4 className="font-semibold mb-4">Order items</h4>
-                                  {order.items?.slice(0, 2).map((item) => (
-                                    <div key={item.id} className="flex items-start gap-4 mb-4">
-                                      <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-secondary to-muted flex items-center justify-center overflow-hidden">
-                                        {item.product?.image_url ? (
-                                          <img src={item.product.image_url} alt={item.product.name} className="w-full h-full object-cover" />
-                                        ) : (
-                                          <Package className="h-8 w-8 text-muted-foreground" />
-                                        )}
-                                      </div>
-                                      <div className="flex-1">
-                                        <h5 className="font-semibold">{item.product?.name}</h5>
-                                        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                                          {item.product?.short_description || 'Digital product'}
-                                        </p>
-                                        {isCompleted && (
-                                          <Badge className="status-delivered">DELIVERED</Badge>
-                                        )}
-                                      </div>
+                          <Card key={order.id} className="border-border/30 overflow-hidden">
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-4">
+                                {/* Order Image */}
+                                <div className="w-16 h-16 rounded-lg bg-muted/50 overflow-hidden flex-shrink-0">
+                                  {order.items?.[0]?.product?.image_url ? (
+                                    <img 
+                                      src={order.items[0].product.image_url} 
+                                      alt="" 
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <Package className="h-6 w-6 text-muted-foreground" />
                                     </div>
-                                  ))}
-                                  {(order.items?.length ?? 0) > 2 && (
-                                    <p className="text-sm text-muted-foreground">
-                                      +{(order.items?.length ?? 0) - 2} more items
-                                    </p>
                                   )}
                                 </div>
 
-                                {/* Order Summary */}
-                                <div className="md:w-64 bg-muted/30 rounded-xl p-4 space-y-3">
-                                  <h4 className="font-semibold text-sm">Order summary</h4>
-                                  <p className="text-xs text-muted-foreground">Quick reference details, amounts, and payment status.</p>
-                                  
-                                  <div className="space-y-2 pt-2">
+                                {/* Order Info */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-2">
                                     <div>
-                                      <p className="text-xs text-muted-foreground uppercase tracking-wider">ORDER ID</p>
-                                      <p className="font-mono font-semibold">KM/ORDER-{order.id.slice(0, 6).toUpperCase()}</p>
+                                      <p className="font-medium text-sm">
+                                        {order.items?.[0]?.product?.name || 'Order'}
+                                        {(order.items?.length ?? 0) > 1 && (
+                                          <span className="text-muted-foreground"> +{(order.items?.length ?? 0) - 1} more</span>
+                                        )}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground mt-0.5">
+                                        {format(new Date(order.created_at), 'MMM dd, yyyy')}
+                                      </p>
                                     </div>
-                                    <div>
-                                      <p className="text-xs text-muted-foreground uppercase tracking-wider">ORDER STATUS</p>
-                                      <Badge className={cn("mt-1", statusColors[order.status])}>
-                                        {order.status.toUpperCase()}
-                                      </Badge>
-                                    </div>
-                                    <div>
-                                      <p className="text-xs text-muted-foreground uppercase tracking-wider">ORDER DATE</p>
-                                      <p className="font-medium">{format(new Date(order.created_at), 'MMM dd, yyyy, h:mm a')}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-xs text-muted-foreground uppercase tracking-wider">PAYMENT STATUS</p>
-                                      <Badge className={cn("mt-1", order.payment_status === 'paid' ? 'status-paid' : 'status-pending')}>
-                                        {order.payment_status.toUpperCase()}
-                                      </Badge>
-                                    </div>
-                                    <div>
-                                      <p className="text-xs text-muted-foreground uppercase tracking-wider">PAYMENT METHOD</p>
-                                      <p className="font-medium uppercase">{order.payment_method || 'N/A'}</p>
-                                    </div>
-                                    <Separator className="my-2" />
-                                    <div className="flex items-center justify-between">
-                                      <p className="text-sm text-muted-foreground">Total Amount</p>
-                                      <p className="text-lg font-bold text-primary">{formatPrice(order.total, orderCurrency)}</p>
-                                    </div>
+                                    <p className="font-semibold text-sm">{formatPrice(order.total, orderCurrency)}</p>
                                   </div>
 
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className="w-full mt-2"
-                                    onClick={() => handleDownloadInvoice(order)}
-                                  >
-                                    <Download className="h-4 w-4 mr-2" />
-                                    Download Invoice
-                                  </Button>
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <Badge className={cn("text-[10px]", statusColors[order.status])}>
+                                      {order.status.toUpperCase()}
+                                    </Badge>
+                                    <Badge className={cn("text-[10px]", order.payment_status === 'paid' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400')}>
+                                      {order.payment_status.toUpperCase()}
+                                    </Badge>
+                                  </div>
+
+                                  <div className="flex items-center gap-2 mt-3">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="h-7 text-xs"
+                                      onClick={() => handleDownloadInvoice(order)}
+                                    >
+                                      <Download className="h-3 w-3 mr-1" />
+                                      Invoice
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      className="h-7 text-xs"
+                                      asChild
+                                    >
+                                      <Link to={`/track-order?id=${order.id}`}>
+                                        Track Order
+                                        <ExternalLink className="h-3 w-3 ml-1" />
+                                      </Link>
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                             </CardContent>
@@ -333,54 +286,60 @@ export default function Profile() {
 
               {/* Wishlist Tab */}
               {activeTab === 'wishlist' && (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h1 className="font-display text-2xl font-bold">My Wishlist</h1>
-                    <Button asChild variant="outline">
-                      <Link to="/wishlist">View Full Wishlist</Link>
-                    </Button>
-                  </div>
+                <div className="space-y-4">
+                  <h1 className="text-xl font-semibold mb-4">My Wishlist</h1>
 
                   {wishlistLoading ? (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="h-48 bg-muted animate-pulse rounded-xl" />
+                        <div key={i} className="h-40 bg-muted animate-pulse rounded-xl" />
                       ))}
                     </div>
                   ) : !wishlist?.length ? (
-                    <Card className="border-border/50">
-                      <CardContent className="pt-8 text-center">
-                        <Heart className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                    <Card className="border-border/30">
+                      <CardContent className="py-12 text-center">
+                        <Heart className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                         <p className="text-muted-foreground mb-4">Your wishlist is empty</p>
-                        <Button asChild>
-                          <Link to="/shop">Explore Products</Link>
+                        <Button asChild size="sm">
+                          <Link to="/shop">Browse Products</Link>
                         </Button>
                       </CardContent>
                     </Card>
                   ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {wishlist.slice(0, 8).map((item) => (
-                        <Link 
-                          key={item.id} 
-                          to={`/product/${item.product?.slug}`}
-                          className="group"
-                        >
-                          <Card className="border-border/50 overflow-hidden card-hover">
-                            <div className="aspect-square bg-muted">
-                              <img 
-                                src={item.product?.image_url || '/placeholder.svg'} 
-                                alt={item.product?.name}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {wishlist.map((item) => (
+                        <Card key={item.id} className="border-border/30 overflow-hidden group">
+                          <div className="relative aspect-square bg-muted/30">
+                            {item.product?.image_url ? (
+                              <img
+                                src={item.product.image_url}
+                                alt={item.product.name}
+                                className="w-full h-full object-cover"
                               />
-                            </div>
-                            <CardContent className="p-3">
-                              <p className="font-medium text-sm line-clamp-1">{item.product?.name}</p>
-                              <p className="text-sm text-primary font-bold">
-                                ৳{Math.round(Number(item.product?.price_bdt || item.product?.price || 0)).toLocaleString()}
-                              </p>
-                            </CardContent>
-                          </Card>
-                        </Link>
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Package className="h-8 w-8 text-muted-foreground" />
+                              </div>
+                            )}
+                            <button
+                              onClick={() => handleRemoveFromWishlist(item.product_id)}
+                              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+                            </button>
+                          </div>
+                          <CardContent className="p-3">
+                            <Link 
+                              to={`/product/${item.product?.slug}`}
+                              className="text-sm font-medium line-clamp-1 hover:text-primary transition-colors"
+                            >
+                              {item.product?.name}
+                            </Link>
+                            <p className="text-sm font-semibold text-primary mt-1">
+                              {formatCurrencyPrice(item.product?.price_bdt || 0, item.product?.price || 0)}
+                            </p>
+                          </CardContent>
+                        </Card>
                       ))}
                     </div>
                   )}
@@ -389,79 +348,51 @@ export default function Profile() {
 
               {/* Profile Tab */}
               {activeTab === 'profile' && (
-                <div className="space-y-6">
-                  <h1 className="font-display text-2xl font-bold">Profile Settings</h1>
-                  
-                  <Card className="border-border/50">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle>Personal Information</CardTitle>
-                          <CardDescription>Manage your account details</CardDescription>
-                        </div>
-                        {!isEditing ? (
-                          <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                            <Edit2 className="h-4 w-4 mr-2" />
-                            Edit
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h1 className="text-xl font-semibold">Profile Settings</h1>
+                    {!isEditing && (
+                      <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                        Edit
+                      </Button>
+                    )}
+                  </div>
+
+                  <Card className="border-border/30">
+                    <CardContent className="p-5 space-y-4">
+                      <div className="space-y-2">
+                        <Label>Full Name</Label>
+                        <Input
+                          value={isEditing ? fullName : (profile?.full_name || '')}
+                          onChange={(e) => setFullName(e.target.value)}
+                          disabled={!isEditing}
+                          placeholder="Enter your name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Email</Label>
+                        <Input value={user.email || ''} disabled />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Phone Number</Label>
+                        <Input
+                          value={isEditing ? phone : (profile?.phone || '')}
+                          onChange={(e) => setPhone(e.target.value)}
+                          disabled={!isEditing}
+                          placeholder="Enter your phone"
+                        />
+                      </div>
+                      
+                      {isEditing && (
+                        <div className="flex gap-2 pt-2">
+                          <Button onClick={handleSaveProfile} disabled={updateProfile.isPending}>
+                            Save Changes
                           </Button>
-                        ) : (
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={handleCancelEdit}>
-                              <X className="h-4 w-4 mr-2" />
-                              Cancel
-                            </Button>
-                            <Button size="sm" onClick={handleSaveProfile} disabled={updateProfile.isPending}>
-                              <Save className="h-4 w-4 mr-2" />
-                              Save
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="fullName">Full Name</Label>
-                          {isEditing ? (
-                            <Input
-                              id="fullName"
-                              value={fullName}
-                              onChange={(e) => setFullName(e.target.value)}
-                              placeholder="Enter your full name"
-                            />
-                          ) : (
-                            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              <span>{profile?.full_name || 'Not set'}</span>
-                            </div>
-                          )}
+                          <Button variant="outline" onClick={handleCancelEdit}>
+                            Cancel
+                          </Button>
                         </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="email">Email</Label>
-                          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-                            <Mail className="h-4 w-4 text-muted-foreground" />
-                            <span>{user.email}</span>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="phone">Phone Number</Label>
-                          {isEditing ? (
-                            <Input
-                              id="phone"
-                              value={phone}
-                              onChange={(e) => setPhone(e.target.value)}
-                              placeholder="Enter your phone number"
-                            />
-                          ) : (
-                            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-                              <Phone className="h-4 w-4 text-muted-foreground" />
-                              <span>{profile?.phone || 'Not set'}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
@@ -469,59 +400,37 @@ export default function Profile() {
 
               {/* Settings Tab */}
               {activeTab === 'settings' && (
-                <div className="space-y-6">
-                  <h1 className="font-display text-2xl font-bold">Security Settings</h1>
-                  
-                  <Card className="border-border/50">
-                    <CardHeader>
-                      <CardTitle>Two-Factor Authentication</CardTitle>
-                      <CardDescription>Add an extra layer of security to your account</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Shield className="h-8 w-8 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium">2FA Authentication</p>
-                            <p className="text-sm text-muted-foreground">
-                              Currently disabled. Enable for enhanced security.
-                            </p>
-                          </div>
+                <div className="space-y-4">
+                  <h1 className="text-xl font-semibold mb-4">Security Settings</h1>
+
+                  <Card className="border-border/30">
+                    <CardContent className="p-5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">Two-Factor Authentication</p>
+                          <p className="text-sm text-muted-foreground">Add an extra layer of security</p>
                         </div>
-                        <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">
-                          DISABLED
-                        </Badge>
+                        <Badge variant="secondary">Coming Soon</Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-4">
-                        Two-factor authentication will be available soon. Stay tuned!
-                      </p>
                     </CardContent>
                   </Card>
 
-                  <Card className="border-border/50">
-                    <CardHeader>
-                      <CardTitle>Email Notifications</CardTitle>
-                      <CardDescription>Manage your notification preferences</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                  <Card className="border-border/30">
+                    <CardContent className="p-5 space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium">Order Updates</p>
-                          <p className="text-sm text-muted-foreground">
-                            Receive emails about your order status
-                          </p>
+                          <p className="font-medium">Email Notifications</p>
+                          <p className="text-sm text-muted-foreground">Receive promotional emails</p>
                         </div>
-                        <Switch checked={orderUpdates} onCheckedChange={setOrderUpdates} />
+                        <Switch checked={emailNotifications} onCheckedChange={setEmailNotifications} />
                       </div>
                       <Separator />
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium">Email Notifications</p>
-                          <p className="text-sm text-muted-foreground">
-                            Receive important account notifications
-                          </p>
+                          <p className="font-medium">Order Updates</p>
+                          <p className="text-sm text-muted-foreground">Get notified about your orders</p>
                         </div>
-                        <Switch checked={emailNotifications} onCheckedChange={setEmailNotifications} />
+                        <Switch checked={orderUpdates} onCheckedChange={setOrderUpdates} />
                       </div>
                     </CardContent>
                   </Card>
