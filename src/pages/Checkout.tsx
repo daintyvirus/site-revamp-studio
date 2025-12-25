@@ -114,11 +114,24 @@ export default function Checkout() {
           title: 'Redirecting to payment',
           description: 'You will be redirected to Digiseller to complete payment'
         });
-        // Redirect to Digiseller payment page
-        window.location.href = result.paymentUrl;
+        
+        // Try window.location.href first
+        console.log('Redirecting to:', result.paymentUrl);
+        
+        // Small delay to show toast, then redirect
+        setTimeout(() => {
+          window.location.href = result.paymentUrl;
+        }, 500);
+      } else {
+        throw new Error('No payment URL received');
       }
-    } catch (error) {
-      // Error handled in hook
+    } catch (error: any) {
+      console.error('Digiseller payment error:', error);
+      toast({
+        title: 'Payment Error',
+        description: error.message || 'Failed to initiate payment',
+        variant: 'destructive'
+      });
     }
   };
 
