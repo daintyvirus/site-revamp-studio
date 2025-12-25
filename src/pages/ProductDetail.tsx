@@ -235,7 +235,7 @@ export default function ProductDetail() {
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Product Image */}
           <div className="relative">
-            <div className="aspect-square overflow-hidden rounded-2xl bg-muted border border-border">
+            <div className="aspect-square overflow-hidden rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50">
               {product.image_url ? (
                 <img
                   src={product.image_url}
@@ -252,18 +252,18 @@ export default function ProductDetail() {
             {/* Badges */}
             <div className="absolute top-4 left-4 flex flex-col gap-2">
               {isFlashSaleActive && (
-                <Badge variant="destructive" className="font-display text-sm px-3 py-1 animate-pulse bg-gradient-to-r from-destructive to-orange-500">
+                <Badge className="font-display text-sm px-3 py-1 animate-pulse bg-gradient-to-r from-primary to-accent text-primary-foreground">
                   <Zap className="h-4 w-4 mr-1" />
                   Flash Sale! -{discountPercent}% OFF
                 </Badge>
               )}
               {!isFlashSaleActive && hasDiscount && (
-                <Badge variant="destructive" className="font-display text-sm px-3 py-1">
+                <Badge className="font-display text-sm px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 text-white">
                   -{discountPercent}% OFF
                 </Badge>
               )}
               {product.is_featured && (
-                <Badge className="bg-primary font-display text-sm px-3 py-1">Featured</Badge>
+                <Badge className="bg-gradient-to-r from-primary to-accent text-primary-foreground font-display text-sm px-3 py-1">Featured</Badge>
               )}
             </div>
           </div>
@@ -327,8 +327,8 @@ export default function ProductDetail() {
             {/* Price */}
             <div className="flex items-baseline gap-3 mb-6">
               <span className={cn(
-                "font-display text-4xl font-bold",
-                isFlashSaleActive ? "text-destructive" : "text-foreground"
+                "font-display text-4xl font-bold bg-gradient-to-r bg-clip-text text-transparent",
+                isFlashSaleActive ? "from-primary to-accent" : "from-foreground to-foreground"
               )}>
                 {formatPrice(basePriceBDT, basePriceUSD)}
               </span>
@@ -338,7 +338,7 @@ export default function ProductDetail() {
                 </span>
               )}
               {hasDiscount && (
-                <Badge variant="secondary" className="text-sm">
+                <Badge className="text-sm bg-green-500/20 text-green-400 border-green-500/30">
                   -{discountPercent}%
                 </Badge>
               )}
@@ -347,7 +347,7 @@ export default function ProductDetail() {
             {/* Quantity Selector */}
             <div className="flex items-center gap-4 mb-6">
               <span className="text-sm font-medium text-foreground">Quantity:</span>
-              <div className="flex items-center gap-2 bg-muted rounded-lg p-1">
+              <div className="flex items-center gap-2 bg-muted/50 rounded-xl p-1 border border-border/50">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -371,10 +371,10 @@ export default function ProductDetail() {
             </div>
 
             {/* Total Price */}
-            <div className="bg-muted/50 rounded-xl p-4 mb-6">
+            <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl p-4 mb-6 border border-primary/20">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Total:</span>
-                <span className="font-display text-2xl font-bold text-primary">
+                <span className="font-display text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                   {formatPrice(basePriceBDT * quantity, basePriceUSD * quantity)}
                 </span>
               </div>
@@ -384,15 +384,15 @@ export default function ProductDetail() {
             <div className="flex items-center gap-2 mb-6">
               <Package className="h-4 w-4 text-muted-foreground" />
               {currentStock > 0 ? (
-                <span className="text-sm text-green-500 font-medium">
+                <span className="text-sm text-green-400 font-medium">
                   In Stock ({currentStock} available)
                 </span>
               ) : (
-                <span className="text-sm text-destructive font-medium">Out of Stock</span>
+                <span className="text-sm text-red-400 font-medium">Out of Stock</span>
               )}
             </div>
 
-            <Separator className="mb-6" />
+            <Separator className="mb-6 bg-border/50" />
 
             {/* Description */}
             {(product.short_description || product.description) && (
@@ -405,14 +405,14 @@ export default function ProductDetail() {
             )}
 
             {/* Delivery Info */}
-            <div className="flex items-center gap-2 p-4 rounded-lg bg-muted/50 border border-border mb-6">
-              <Truck className="h-5 w-5 text-primary" />
+            <div className="flex items-center gap-2 p-4 rounded-xl bg-green-500/10 border border-green-500/20 mb-6">
+              <Truck className="h-5 w-5 text-green-400" />
               <span className="text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">Instant Delivery</span> — Code sent to your email immediately after purchase
+                <span className="font-medium text-green-400">Instant Delivery</span> — Code sent to your email immediately after purchase
               </span>
             </div>
 
-            <Separator className="mb-6" />
+            <Separator className="mb-6 bg-border/50" />
 
             {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-4 mt-auto">
@@ -421,10 +421,10 @@ export default function ProductDetail() {
                   <Button
                     size="lg"
                     className={cn(
-                      "flex-1",
+                      "flex-1 h-12 font-semibold",
                       isFlashSaleActive 
-                        ? "bg-gradient-to-r from-destructive to-orange-500 hover:from-destructive/90 hover:to-orange-500/90" 
-                        : "glow-purple"
+                        ? "bg-gradient-to-r from-primary to-accent hover:opacity-90" 
+                        : "bg-gradient-to-r from-primary to-accent hover:opacity-90"
                     )}
                     onClick={handleAddToCart}
                     disabled={addToCart.isPending || currentStock <= 0}
@@ -437,13 +437,13 @@ export default function ProductDetail() {
                     variant="outline"
                     onClick={handleToggleWishlist}
                     disabled={toggleWishlist.isPending}
-                    className={cn(isInWishlist && 'border-destructive text-destructive')}
+                    className={cn("h-12 border-border/50 hover:bg-muted/50", isInWishlist && 'border-red-500/50 text-red-400 hover:bg-red-500/10')}
                   >
                     <Heart className={cn('h-5 w-5', isInWishlist && 'fill-current')} />
                   </Button>
                 </>
               ) : (
-                <Button asChild size="lg" className="flex-1 glow-purple">
+                <Button asChild size="lg" className="flex-1 h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 font-semibold">
                   <Link to="/auth">
                     Sign in to Purchase
                   </Link>
