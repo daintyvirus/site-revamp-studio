@@ -1,16 +1,18 @@
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { X, ShoppingBag, ArrowLeft, ArrowRight } from 'lucide-react';
+import { X, ShoppingBag, ArrowLeft, ArrowRight, ExternalLink, Loader2 } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { useCheckout } from '@/hooks/useCheckout';
+import { useDigisellerPayment } from '@/hooks/useDigisellerPayment';
 import { useActivePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useCurrency } from '@/hooks/useCurrency';
 import CustomerInfoForm from '@/components/checkout/CustomerInfoForm';
 import PaymentMethodSelector from '@/components/checkout/PaymentMethodSelector';
 import PaymentInstructions from '@/components/checkout/PaymentInstructions';
+import { toast } from '@/hooks/use-toast';
 
 const STORE_NAME = 'GameStore';
 
@@ -22,6 +24,7 @@ export default function Checkout() {
   const { data: paymentMethods, isLoading: methodsLoading } = useActivePaymentMethods();
   const { currency, formatPrice } = useCurrency();
   const checkout = useCheckout();
+  const digisellerPayment = useDigisellerPayment();
   const navigate = useNavigate();
   
   const [step, setStep] = useState<Step>('info');
@@ -94,10 +97,39 @@ export default function Checkout() {
 
   const canProceedFromInfo = customerInfo.name && customerInfo.email && customerInfo.phone;
   const canProceedFromMethod = selectedMethodSlug !== null;
-  const canSubmit = transactionId.trim().length > 0;
+  const isDigiseller = selectedMethod?.type === 'digiseller';
+  const canSubmit = isDigiseller || transactionId.trim().length > 0;
+
+  const handleDigisellerPayment = async () => {
+    if (!canProceedFromInfo) return;
+    
+    try {
+      const result = await digisellerPayment.mutateAsync({
+        customerInfo,
+        notes: ''
+      });
+      
+      if (result.paymentUrl) {
+        toast({
+          title: 'Redirecting to payment',
+          description: 'You will be redirected to Digiseller to complete payment'
+        });
+        // Redirect to Digiseller payment page
+        window.location.href = result.paymentUrl;
+      }
+    } catch (error) {
+      // Error handled in hook
+    }
+  };
 
   const handleSubmit = async () => {
     if (!selectedMethodSlug) return;
+    
+    // Handle Digiseller separately
+    if (isDigiseller) {
+      await handleDigisellerPayment();
+      return;
+    }
     
     try {
       const result = await checkout.mutateAsync({
@@ -221,22 +253,66 @@ export default function Checkout() {
                       Change Payment Method
                     </Button>
                     
-                    <PaymentInstructions
-                      method={selectedMethod}
-                      amount={currency === 'BDT' ? totalBDT : totalUSD}
-                      transactionId={transactionId}
-                      onTransactionIdChange={setTransactionId}
-                      storeName={STORE_NAME}
-                    />
-                    
-                    <Button
-                      onClick={handleSubmit}
-                      disabled={!canSubmit || checkout.isPending}
-                      className="w-full bg-blue-600 hover:bg-blue-700"
-                      size="lg"
-                    >
-                      {checkout.isPending ? 'Verifying...' : 'VERIFY'}
-                    </Button>
+                    {isDigiseller ? (
+                      // Digiseller auto-redirect flow
+                      <div className="space-y-4">
+                        <div className="bg-muted/50 rounded-xl p-6 text-center">
+                          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                            <ExternalLink className="h-8 w-8 text-primary" />
+                          </div>
+                          <h3 className="font-bold text-lg mb-2">Pay with Digiseller</h3>
+                          <p className="text-muted-foreground text-sm mb-4">
+                            You will be redirected to Digiseller's secure payment page to complete your purchase.
+                            After payment, you'll be automatically returned to this site.
+                          </p>
+                          <div className="bg-background rounded-lg p-3 border">
+                            <p className="text-sm">
+                              <span className="text-muted-foreground">Amount: </span>
+                              <span className="font-bold">${totalUSD.toFixed(2)} USD</span>
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <Button
+                          onClick={handleSubmit}
+                          disabled={digisellerPayment.isPending}
+                          className="w-full bg-blue-600 hover:bg-blue-700"
+                          size="lg"
+                        >
+                          {digisellerPayment.isPending ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Preparing Payment...
+                            </>
+                          ) : (
+                            <>
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Proceed to Payment
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    ) : (
+                      // Standard manual payment flow
+                      <>
+                        <PaymentInstructions
+                          method={selectedMethod}
+                          amount={currency === 'BDT' ? totalBDT : totalUSD}
+                          transactionId={transactionId}
+                          onTransactionIdChange={setTransactionId}
+                          storeName={STORE_NAME}
+                        />
+                        
+                        <Button
+                          onClick={handleSubmit}
+                          disabled={!canSubmit || checkout.isPending}
+                          className="w-full bg-blue-600 hover:bg-blue-700"
+                          size="lg"
+                        >
+                          {checkout.isPending ? 'Verifying...' : 'VERIFY'}
+                        </Button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
